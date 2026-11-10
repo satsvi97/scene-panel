@@ -681,3 +681,24 @@
     color: #d4d4ff;
     font-weight: 600;
 }
+
+/* версия в правом нижнем углу */
+.scene-panel-version {
+    text-align: right;
+    font-size: 0.68em;
+    letter-spacing: 0.06em;
+    opacity: 0.4;
+    margin-top: 2px;
+    color: #b8b8ff;
+    user-select: none;
+}
+
+.scene-panel-float-version {
+    text-align: right;
+    font-size: 0.62em;
+    letter-spacing: 0.05em;
+    opacity: 0.35;
+    margin-top: 3px;
+    color: #b8b8ff;
+    user-select: none;
+}
