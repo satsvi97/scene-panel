@@ -79,6 +79,7 @@ function commit() {
     } catch (e) {
         console.warn('[scene-panel] metadata save failed', e);
     }
+    renderFloating();
 }
 
 function sceneText(state) {
@@ -295,6 +296,12 @@ jQuery(async () => {
             syncPrompt();
         });
         eventSource.on(event_types.GENERATION_STARTED, () => syncPrompt());
+        eventSource.on(event_types.MESSAGE_SENT, () => refresh());
+
+        window.addEventListener('focus', () => refresh());
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) refresh();
+        });
 
         console.log('[scene-panel] ready');
     } catch (e) {
