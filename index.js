@@ -64,6 +64,10 @@ function emptyState() {
         present: [],
         open: [],
         mood: '',
+        // Новые поля для таймера
+        sceneStartDay: 1,       // день старта сцены
+        sceneStartHour: 0,      // час старта (0-23)
+        sceneStartMinute: 0,    // минута старта (0-59)
     };
 }
 
@@ -122,6 +126,27 @@ function monthTitle(state) {
     return label ? label + ' · ' + idx : 'месяц ' + idx;
 }
 
+// Форматирование прошедшего времени с начала сцены
+function elapsedTimeString(state) {
+    const startDay = state.sceneStartDay;
+    const startHour = state.sceneStartHour;
+    const startMinute = state.sceneStartMinute;
+    const daysPassed = state.day - startDay;
+    const totalHours = daysPassed * 24 + (24 - startHour) + (startMinute ? (60 - startMinute) / 60 : 0);
+    const totalDays = Math.floor(totalHours / 24);
+    const hours = Math.floor(totalHours % 24);
+    const minutes = Math.round((totalHours % 1) * 60);
+
+    if (totalDays > 0) {
+        const dayStr = totalDays + (totalDays % 10 === 1 && totalDays !== 11 ? 'е' : (totalDays % 10 >= 2 && totalDays % 10 <= 4 && (totalDays < 10 || totalDays > 20) ? 'а' : 'ы'));
+        return `день ${dayStr} ${hours} час${hours !== 1 ? 'а' : ''} ${minutes} мин`;
+    }
+    if (hours > 0) {
+        return `${hours} час${hours !== 1 ? 'а' : ''} ${minutes} мин`;
+    }
+    return `${minutes} мин`;
+}
+
 function commit() {
     try {
         saveMetadataDebounced();
@@ -138,15 +163,17 @@ function sceneText(state) {
     if (state.monthLabel.trim()) parts.push('месяц: ' + state.monthLabel.trim());
     if (state.date) parts.push('дата: ' + state.date);
     if (state.place) parts.push('место: ' + state.place);
-    const when = [state.timeOfDay, state.weather].filter(Boolean).join(', ');
+    const when = [state.timeOfDay, mapWeatherToWb(state.weather)].filter(Boolean).join(', ');
     if (when) parts.push('обстановка: ' + when);
     if (state.present.length > 0) parts.push('рядом: ' + state.present.join(', '));
     if (state.open.length > 0) parts.push('не закрыто: ' + state.open.join('; '));
     if (state.mood) parts.push('тон: ' + state.mood);
+    // Добавляем таймер сессии
+    parts.push('время сессии: ' + elapsedTimeString(state));
     return parts.join('. ') + '. ' +
         'Это текущее состояние сцены. Если в твоём ответе меняются место, время, состав сцены, ' +
         'закрываются или появляются нити — добавь в самом конце ответа ровно одну строку ' +
-        '[[scene: место=…; время=…; рядом=…; висит=…; тон=…; погода=…]] и не упоминай её в тексте.';
+        '[[scene: место=…; время=…; рядом=…; висит=…; тон=…; погода=…; время_сессии=…]] и не упоминай её в тексте.';
 }
 
 function injectionRole() {
@@ -621,6 +648,36 @@ function bindEvents() {
         }
         renderFloating();
         refresh();
+    });
+
+    // Обработчики таймера в модальном окне
+    $('#scene_panel_minus_hour').on('click', () => {
+        getState().sceneStartHour = Math.max(0, getState().sceneStartHour - 1);
+        commit();
+        syncPrompt();
+        refresh();
+        $('#scene_panel_modal_elapsed').text(elapsedTimeString(getState()));
+    });
+    $('#scene_panel_plus_hour').on('click', () => {
+        getState().sceneStartHour = Math.min(23, getState().sceneStartHour + 1);
+        commit();
+        syncPrompt();
+        refresh();
+        $('#scene_panel_modal_elapsed').text(elapsedTimeString(getState()));
+    });
+    $('#scene_panel_minus_day').on('click', () => {
+        getState().sceneStartDay = Math.max(1, getState().sceneStartDay - 1);
+        commit();
+        syncPrompt();
+        refresh();
+        $('#scene_panel_modal_elapsed').text(elapsedTimeString(getState()));
+    });
+    $('#scene_panel_plus_day').on('click', () => {
+        getState().sceneStartDay = getState().day + 1; // просто увеличиваем день
+        commit();
+        syncPrompt();
+        refresh();
+        $('#scene_panel_modal_elapsed').text(elapsedTimeString(getState()));
     });
 }
 
