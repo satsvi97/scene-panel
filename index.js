@@ -34,6 +34,22 @@ const KEY_ALIASES = {
     'тон': 'mood', 'mood': 'mood',
 };
 
+// Значения, которые понимает Weather Background (setWeatherEffect).
+const WEATHER_STATES = {
+    'дождь': 'rain', 'ливень': 'rain', 'rain': 'rain', 'shower': 'rain',
+    'гроза': 'thunderstorm', 'thunderstorm': 'thunderstorm', 'storm': 'thunderstorm',
+    'снег': 'snow', 'snow': 'snow',
+    'метель': 'blizzard', 'blizzard': 'blizzard',
+    'облачно': 'cloudy', 'пасмурно': 'cloudy', 'cloudy': 'cloudy', 'overcast': 'cloudy',
+    'солнечно': 'sunny', 'sunny': 'sunny',
+    'град': 'hail', 'hail': 'hail',
+    'ясно': 'clear', 'clear': 'clear',
+    'нет': 'none', 'none': 'none',
+};
+
+// Ленивая загрузка рендерера Weather Background (чтобы не падать, если расширения нет).
+let weatherRendererPromise = null;
+
 let saveSettings = () => {};
 
 function emptyState() {
@@ -53,13 +69,14 @@ function emptyState() {
 
 function getSettings() {
     if (!extension_settings[MODULE] || typeof extension_settings[MODULE] !== 'object') {
-        extension_settings[MODULE] = { enabled: true, inject: true, role: 'system', floating: true, floatPos: null };
+        extension_settings[MODULE] = { enabled: true, inject: true, role: 'system', floating: true, floatPos: null, weatherIntegration: true };
     }
     const s = extension_settings[MODULE];
     if (typeof s.enabled !== 'boolean') s.enabled = true;
     if (typeof s.inject !== 'boolean') s.inject = true;
     if (typeof s.floating !== 'boolean') s.floating = true;
     if (typeof s.role !== 'string') s.role = 'system';
+    if (typeof s.weatherIntegration !== 'boolean') s.weatherIntegration = true;
     return s;
 }
 
@@ -129,7 +146,7 @@ function sceneText(state) {
     return parts.join('. ') + '. ' +
         'Это текущее состояние сцены. Если в твоём ответе меняются место, время, состав сцены, ' +
         'закрываются или появляются нити — добавь в самом конце ответа ровно одну строку ' +
-        '[[scene: место=…; время=…; рядом=…; висит=…; тон=…]] и не упоминай её в тексте.';
+        '[[scene: место=…; время=…; рядом=…; висит=…; тон=…; погода=…]] и не упоминай её в тексте.';
 }
 
 function injectionRole() {
@@ -213,6 +230,7 @@ function refresh() {
         $panel.find('#scene_panel_inject').prop('checked', getSettings().inject);
         $panel.find('#scene_panel_floating').prop('checked', getSettings().floating);
         $panel.find('#scene_panel_role').val(getSettings().role);
+        $panel.find('#scene_panel_weather_integration').prop('checked', getSettings().weatherIntegration);
         renderCalendar('scene_panel_cal');
     }
     renderFloating();
@@ -236,6 +254,7 @@ function readForm() {
     commit();
     syncPrompt();
     refresh();
+    applyWeatherEffect();
 }
 
 function shiftDay(delta) {
@@ -317,8 +336,48 @@ function handleMessage(messageId) {
         commit();
         syncPrompt();
         refresh();
+        applyWeatherEffect();
     } catch (e) {
         console.error('[scene-panel] tag handling failed', e);
+    }
+}
+
+// Переводит свободный текст погоды в состояние Weather Background.
+function mapWeatherToState(value) {
+    if (typeof value !== 'string') return null;
+    const raw = value.trim().toLowerCase();
+    if (!raw) return null;
+    if (WEATHER_STATES[raw]) return WEATHER_STATES[raw];
+    for (const [key, state] of Object.entries(WEATHER_STATES)) {
+        if (key.length > 2 && raw.includes(key)) return state;
+    }
+    return null;
+}
+
+// Применяет погоду сцены к фону Weather Background (если расширение установлено).
+// force=true — принудительно очищает эффект (например, при сбросе сцены).
+async function applyWeatherEffect(force = false) {
+    const settings = getSettings();
+    if (!isEnabled() || !settings.weatherIntegration) return;
+
+    const state = force ? 'clear' : mapWeatherToState(getState().weather);
+    if (!state) return;
+
+    const wb = extension_settings?.['weather_background'];
+    if (wb && wb.enabled === false) return;
+    const mobileMode = Boolean(wb?.mobileMode);
+
+    try {
+        if (!weatherRendererPromise) {
+            weatherRendererPromise = import('../sillytavern-weather-background/src/background-renderer.js');
+        }
+        const mod = await weatherRendererPromise;
+        if (mod && typeof mod.setWeatherEffect === 'function') {
+            mod.setWeatherEffect(state, { mobileMode });
+        }
+    } catch (e) {
+        weatherRendererPromise = null;
+        console.warn('[scene-panel] Weather Background недоступен, эффект пропущен', e);
     }
 }
 
@@ -501,6 +560,7 @@ function bindEvents() {
         commit();
         syncPrompt();
         refresh();
+        applyWeatherEffect(true);
     });
     $panel.on('change', '#scene_panel_inject', (e) => {
         getSettings().inject = !!e.target.checked;
@@ -528,6 +588,16 @@ function bindEvents() {
             /* ignore */
         }
         renderFloating();
+    });
+    $panel.on('change', '#scene_panel_weather_integration', (e) => {
+        getSettings().weatherIntegration = !!e.target.checked;
+        try {
+            saveSettings();
+        } catch (err) {
+            /* ignore */
+        }
+        applyWeatherEffect();
+        refresh();
     });
 
     const $float = $('#scene_panel_float');
@@ -581,12 +651,14 @@ jQuery(async () => {
         enableDrag();
         refresh();
         syncPrompt();
+        applyWeatherEffect();
 
         eventSource.on(event_types.MESSAGE_RECEIVED, handleMessage);
         eventSource.on(event_types.CHAT_CHANGED, () => {
             getState();
             refresh();
             syncPrompt();
+            setTimeout(() => applyWeatherEffect(), 250);
         });
         eventSource.on(event_types.GENERATION_STARTED, () => syncPrompt());
         eventSource.on(event_types.MESSAGE_SENT, () => refresh());
