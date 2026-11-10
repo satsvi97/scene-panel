@@ -51,7 +51,7 @@ const WEATHER_STATES = {
 let weatherRendererPromise = null;
 
 // Версия расширения (дублирует manifest.json для отображения в UI)
-const PANEL_VERSION = '0.7.0';
+const PANEL_VERSION = '0.7.1';
 
 // Встроенная разметка панели. Не зависит от внешнего panel.html и его кэша.
 const PANEL_HTML = `<div class="scene-panel-settings" id="scene_panel_settings">
@@ -133,14 +133,11 @@ const PANEL_HTML = `<div class="scene-panel-settings" id="scene_panel_settings">
 
     <div class="scene-panel-field">
         <span>🩺 Диагностика</span>
-        <div class="scene-panel-actions">
+        <div class="scene-panel-actions scene-panel-actions-row">
             <div class="menu_button" id="scene_panel_diag">проверить и восстановить</div>
+            <div class="menu_button" id="scene_panel_reset">сбросить</div>
         </div>
         <div id="scene_panel_diag_result" class="scene-panel-hint"></div>
-    </div>
-
-    <div class="scene-panel-actions">
-        <div class="menu_button" id="scene_panel_reset">сбросить</div>
     </div>
     <label class="checkbox_label scene-panel-check">
         <input type="checkbox" id="scene_panel_inject">

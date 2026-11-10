@@ -720,6 +720,35 @@
     font-weight: 600;
 }
 
+/* строка действий: диагностика слева, сброс справа */
+.scene-panel-actions-row {
+    flex-wrap: nowrap;
+    align-items: stretch;
+}
+
+.scene-panel-actions-row #scene_panel_diag {
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: normal;
+    line-height: 1.3;
+    text-align: center;
+}
+
+.scene-panel-actions-row #scene_panel_reset {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+@media (max-width: 420px) {
+    .scene-panel-actions-row {
+        flex-wrap: wrap;
+    }
+
+    .scene-panel-actions-row #scene_panel_reset {
+        flex: 1 1 100%;
+    }
+}
+
 /* версия в правом нижнем углу */
 .scene-panel-version {
     text-align: right;
