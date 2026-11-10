@@ -173,6 +173,17 @@
     opacity: 0.5;
 }
 
+.scene-panel-float-mood {
+    font-size: 11px;
+    font-style: italic;
+    opacity: 0.6;
+    margin-top: 2px;
+}
+
+.scene-panel-float-mood:empty {
+    display: none;
+}
+
 @media (max-width: 1000px) {
     .scene-panel-float {
         display: none !important;

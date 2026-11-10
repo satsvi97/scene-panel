@@ -183,6 +183,7 @@ function renderFloating() {
     $float.find('#scene_panel_float_place').text(state.place || '—');
     $float.find('#scene_panel_float_when').text([state.timeOfDay, state.weather].filter(Boolean).join(' · '));
     $float.find('#scene_panel_float_present').text(state.present.length > 0 ? state.present.join(' · ') : '—');
+    $float.find('#scene_panel_float_mood').text(state.mood || '');
     const $open = $float.find('#scene_panel_float_open').empty();
     if (state.open.length === 0) {
         $open.append($('<div>').addClass('scene-panel-float-empty').text('нет открытых нитей'));
