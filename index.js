@@ -6,8 +6,9 @@ import {
     updateMessageBlock,
     eventSource,
     event_types,
-    getContext,
 } from '../../../../script.js';
+
+import { getContext } from '../../../st-context.js';
 
 import {
     extension_settings,
