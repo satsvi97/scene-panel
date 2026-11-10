@@ -1,101 +1,98 @@
-<div class="scene-panel-wrap">
-    <div class="inline-drawer">
-        <div class="inline-drawer-header">
-            <b>✦ SCENE PANEL ✦</b>
-            <span class="scene-panel-day" id="scene_panel_day_compact">день 1</span>
-            <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
+<div class="scene-panel-settings" id="scene_panel_settings">
+    <div class="scene-panel-hint">
+        ИИ обновляет состояние тегом в конце сообщения:
+        <code>[[scene: день=+1; место=Дворец Ночи; время=утро; рядом=Ризанд; висит=разговор с Фейрой]]</code>
+        — тег из текста вырезается.
+    </div>
+
+    <div class="scene-cal" id="scene_panel_cal">
+        <div class="scene-cal-head">
+            <span class="scene-cal-btn scene-cal-prev" title="предыдущий месяц">‹</span>
+            <span class="scene-cal-title">месяц 1</span>
+            <span class="scene-cal-btn scene-cal-next" title="следующий месяц">›</span>
         </div>
-        <div class="inline-drawer-content">
-            <label class="checkbox_label scene-panel-check">
-                <input type="checkbox" id="scene_panel_enabled">
-                <span>расширение включено</span>
-            </label>
-            <div class="scene-panel-actions">
-                <div class="menu_button" id="scene_panel_open_modal">открыть панель сцены</div>
-            </div>
-            <div class="scene-panel-hint">
-                Календарь, место, состав сцены и открытые нити. ИИ обновляет их тегом
-                <code>[[scene: …]]</code> в конце ответа.
-            </div>
+        <div class="scene-cal-grid"></div>
+        <div class="scene-cal-actions">
+            <div class="menu_button" id="scene_panel_day_minus">− день</div>
+            <div class="menu_button" id="scene_panel_day_plus">+ день</div>
         </div>
     </div>
-</div>
 
-<!-- Модальное окно сцены -->
-<div id="scene_panel_modal" class="scene-panel-modal" aria-hidden="true">
-    <div class="scene-panel-modal-card" role="dialog" aria-label="SCENE PANEL">
-        <div class="scene-panel-modal-head">
-            <span class="scene-panel-modal-title">✦ SCENE PANEL ✦</span>
-            <span class="scene-panel-modal-day" id="scene_panel_day_label">день 1</span>
-            <span class="scene-panel-modal-x" id="scene_panel_modal_close" title="закрыть">×</span>
-        </div>
-        <div class="scene-panel-modal-body" id="scene_panel_modal_body">
-            <!-- Календарь -->
-            <div class="scene-panel-section">
-                <h4>📅 Календарь</h4>
-                <div class="scene-cal-compact" id="scene_panel_modal_cal">
-                    <div class="scene-cal-compact-head">
-                        <span class="scene-cal-compact-title">месяц 1</span>
-                        <span class="scene-cal-compact-btn scene-cal-compact-prev" title="предыдущий месяц">‹</span>
-                        <span class="scene-cal-compact-btn scene-cal-compact-next" title="следующий месяц">›</span>
-                    </div>
-                    <div class="scene-cal-compact-grid"></div>
-                </div>
-            </div>
+    <div class="scene-panel-row">
+        <label class="scene-panel-field">
+            <span>Название месяца</span>
+            <input type="text" id="scene_panel_month_label" placeholder="Сиреневый">
+        </label>
+        <label class="scene-panel-field scene-panel-narrow">
+            <span>Дней в месяце</span>
+            <input type="number" id="scene_panel_month_len" min="5" max="60" step="1" value="30">
+        </label>
+    </div>
 
-            <!-- Обстановка сцены -->
-            <div class="scene-panel-section">
-                <h4>🌍 Обстановка</h4>
-                <div class="scene-panel-field">
-                    <span>Место:</span>
-                    <input type="text" id="scene_panel_modal_place" placeholder="Дворец Ночи">
-                </div>
-                <div class="scene-panel-field">
-                    <span>Время:</span>
-                    <input type="text" id="scene_panel_modal_time" placeholder="утро">
-                </div>
-                <div class="scene-panel-field">
-                    <span>Погода:</span>
-                    <input type="text" id="scene_panel_modal_weather" placeholder="ясно">
-                </div>
-            </div>
+    <label class="scene-panel-field">
+        <span>📅 Дата словами</span>
+        <input type="text" data-scene-field="date" placeholder="12-е, месяц Сиреневой Луны">
+    </label>
+    <label class="scene-panel-field">
+        <span>📍 Место</span>
+        <input type="text" data-scene-field="place" placeholder="Дворец Ночи, покои Ризанда">
+    </label>
+    <div class="scene-panel-row">
+        <label class="scene-panel-field">
+            <span>🕐 Время</span>
+            <input type="text" data-scene-field="timeOfDay" placeholder="утро">
+        </label>
+        <label class="scene-panel-field">
+            <span>🌦 Погода</span>
+            <input type="text" data-scene-field="weather" placeholder="ясно, прохладно">
+        </label>
+    </div>
+    <label class="scene-panel-field">
+        <span>👥 Рядом (через запятую)</span>
+        <input type="text" data-scene-field="present" placeholder="Ризанд, Никс">
+    </label>
+    <label class="scene-panel-field">
+        <span>⚡ Висит (каждое с новой строки)</span>
+        <textarea data-scene-field="open" rows="3" placeholder="Никс ждёт ответа&#10;Фейра назначила разговор"></textarea>
+    </label>
+    <label class="scene-panel-field">
+        <span>🌫 Тон</span>
+        <input type="text" data-scene-field="mood" placeholder="хрупкое перемирие">
+    </label>
 
-            <!-- Состав сцены -->
-            <div class="scene-panel-section">
-                <h4>👥 Рядом</h4>
-                <div id="scene_panel_modal_present" style="margin-top: 4px;"></div>
-            </div>
-
-            <!-- Открытые нити -->
-            <div class="scene-panel-section">
-                <h4>⚡ Висит</h4>
-                <div id="scene_panel_modal_open" style="margin-top: 4px;"></div>
-            </div>
-
-            <!-- Тон сцены -->
-            <div class="scene-panel-section">
-                <h4>🌫️ Тон</h4>
-                <input type="text" id="scene_panel_modal_mood" placeholder="хрупкое перемирие">
-            </div>
-
-            <!-- Таймер сессии -->
-            <div class="scene-panel-section">
-                <h4>⏱ Сессия</h4>
-                <div style="margin-top: 4px;">
-                    <span id="scene_panel_modal_elapsed">день 1</span>
-                    <div style="margin-top: 4px; display: flex; gap: 32px;">
-                        <button id="scene_panel_minus_hour" class="scene-panel-btn-minus" title="минус 1 час">− час</button>
-                        <button id="scene_panel_plus_hour" class="scene-panel-btn-plus" title="+1 час">+ час</button>
-                        <button id="scene_panel_minus_day" class="scene-panel-btn-minus" title="минус 1 день">− день</button>
-                        <button id="scene_panel_plus_day" class="scene-panel-btn-plus" title="+1 день">+ день</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Кредитная надпись -->
-            <div style="margin-top: 12px; padding-top: 8px; border-top: 1px solid rgba(160, 150, 220, 0.3); font-size: 0.75em; color: rgba(180, 170, 255, 0.5);">
-                <span>by ✦ Selena's Tavern ✦</span>
-            </div>
+    <div class="scene-panel-field">
+        <span>⏱ Сессия: <b id="scene_panel_elapsed_display">день 1, 00:00</b></span>
+        <div class="scene-panel-actions">
+            <div class="menu_button" id="scene_panel_session_minus_hour" title="минус час">− час</div>
+            <div class="menu_button" id="scene_panel_session_plus_hour" title="плюс час">+ час</div>
+            <div class="menu_button" id="scene_panel_session_minus_day" title="минус день">− день</div>
+            <div class="menu_button" id="scene_panel_session_plus_day" title="плюс день">+ день</div>
         </div>
     </div>
+
+    <div class="scene-panel-actions">
+        <div class="menu_button" id="scene_panel_reset">сбросить</div>
+    </div>
+    <label class="checkbox_label scene-panel-check">
+        <input type="checkbox" id="scene_panel_inject">
+        <span>вставлять сцену в промпт</span>
+    </label>
+    <label class="scene-panel-field scene-panel-inline">
+        <span>роль инжекта</span>
+        <select id="scene_panel_role">
+            <option value="system">system</option>
+            <option value="user">user</option>
+            <option value="assistant">assistant</option>
+        </select>
+    </label>
+    <label class="checkbox_label scene-panel-check">
+        <input type="checkbox" id="scene_panel_floating">
+        <span>плавающая панель в чате</span>
+    </label>
+    <label class="checkbox_label scene-panel-check">
+        <input type="checkbox" id="scene_panel_weather_integration">
+        <span>🌦 фон погоды (Weather Background)</span>
+    </label>
+
+    <div class="scene-panel-credit">by ✦ Selena's Tavern ✦</div>
 </div>

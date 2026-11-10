@@ -664,3 +664,20 @@
     letter-spacing: 0.08em;
     text-shadow: 0 0 10px rgba(180, 170, 255, 0.45);
 }
+
+/* ---- подпись автора внизу панели ---- */
+.scene-panel-credit {
+    margin-top: 12px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(160, 150, 220, 0.3);
+    text-align: center;
+    font-size: 0.75em;
+    letter-spacing: 0.04em;
+    color: rgba(184, 184, 255, 0.55);
+}
+
+/* компактные кнопки счётчика времени */
+#scene_panel_elapsed_display {
+    color: #d4d4ff;
+    font-weight: 600;
+}
