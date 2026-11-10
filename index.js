@@ -51,7 +51,7 @@ const WEATHER_STATES = {
 let weatherRendererPromise = null;
 
 // Версия расширения (дублирует manifest.json для отображения в UI)
-const PANEL_VERSION = '0.6.6';
+const PANEL_VERSION = '0.7.0';
 
 // Встроенная разметка панели. Не зависит от внешнего panel.html и его кэша.
 const PANEL_HTML = `<div class="scene-panel-settings" id="scene_panel_settings">
@@ -126,6 +126,19 @@ const PANEL_HTML = `<div class="scene-panel-settings" id="scene_panel_settings">
         </div>
     </div>
 
+    <label class="scene-panel-field">
+        <span>🏷 Доп. поля (ключ=значение, каждое с новой строки)</span>
+        <textarea id="scene_panel_custom" rows="2" placeholder="сюжет=погоня&#10;напряжение=высокое"></textarea>
+    </label>
+
+    <div class="scene-panel-field">
+        <span>🩺 Диагностика</span>
+        <div class="scene-panel-actions">
+            <div class="menu_button" id="scene_panel_diag">проверить и восстановить</div>
+        </div>
+        <div id="scene_panel_diag_result" class="scene-panel-hint"></div>
+    </div>
+
     <div class="scene-panel-actions">
         <div class="menu_button" id="scene_panel_reset">сбросить</div>
     </div>
@@ -171,6 +184,7 @@ function emptyState() {
         sessionDay: 1,
         sessionHour: 0,
         sessionMinute: 0,
+        custom: {},
     };
 }
 
@@ -214,6 +228,7 @@ function getState() {
     s.sessionHour = Number.isFinite(sh) && sh >= 0 && sh <= 23 ? Math.round(sh) : 0;
     const sm = Number(s.sessionMinute);
     s.sessionMinute = Number.isFinite(sm) && sm >= 0 && sm <= 59 ? Math.round(sm) : 0;
+    if (!s.custom || typeof s.custom !== 'object' || Array.isArray(s.custom)) s.custom = {};
     return s;
 }
 
@@ -256,6 +271,7 @@ function shiftSessionHour(delta) {
     state.sessionHour = Math.floor(rest / 60);
     state.sessionMinute = rest % 60;
     commit();
+    recordSnapshot();
     syncPrompt();
     refresh();
 }
@@ -265,6 +281,7 @@ function shiftSessionDay(delta) {
     const state = getState();
     state.sessionDay = Math.max(1, state.sessionDay + delta);
     commit();
+    recordSnapshot();
     syncPrompt();
     refresh();
 }
@@ -290,6 +307,10 @@ function sceneText(state) {
     if (state.present.length > 0) parts.push('рядом: ' + state.present.join(', '));
     if (state.open.length > 0) parts.push('не закрыто: ' + state.open.join('; '));
     if (state.mood) parts.push('тон: ' + state.mood);
+    const customKeys = Object.keys(state.custom || {});
+    if (customKeys.length > 0) {
+        parts.push('доп: ' + customKeys.map((k) => k + '=' + state.custom[k]).join('; '));
+    }
     parts.push('время сессии: ' + elapsedTimeString(state));
     return parts.join('. ') + '. ' +
         'Это текущее состояние сцены. Если в твоём ответе меняются место, время, состав сцены, ' +
@@ -380,6 +401,8 @@ function refresh() {
         $panel.find('#scene_panel_role').val(getSettings().role);
         $panel.find('#scene_panel_weather_integration').prop('checked', getSettings().weatherIntegration);
         $panel.find('#scene_panel_elapsed_display').text(elapsedTimeString(state));
+        const customText = Object.entries(state.custom || {}).map(([k, v]) => k + '=' + v).join('\n');
+        $panel.find('#scene_panel_custom').val(customText);
         renderCalendar('scene_panel_cal');
     }
     renderFloating();
@@ -400,7 +423,21 @@ function readForm() {
     state.mood = read('mood');
     state.present = split(read('present'), /[,\n]/);
     state.open = split(read('open'), /\n/);
+    // Произвольные поля: строки "ключ=значение"
+    const customRaw = $('#scene_panel_settings #scene_panel_custom').val();
+    if (typeof customRaw === 'string') {
+        const custom = {};
+        customRaw.split('\n').forEach((line) => {
+            const s = line.trim();
+            if (!s) return;
+            const i = s.indexOf('=');
+            if (i <= 0) return;
+            custom[s.slice(0, i).trim()] = s.slice(i + 1).trim();
+        });
+        state.custom = custom;
+    }
     commit();
+    recordSnapshot();
     syncPrompt();
     refresh();
     applyWeatherEffect();
@@ -410,6 +447,7 @@ function shiftDay(delta) {
     const state = getState();
     state.day = Math.max(1, state.day + delta);
     commit();
+    recordSnapshot();
     syncPrompt();
     refresh();
 }
@@ -418,6 +456,7 @@ function setDayOfMonth(dom) {
     const state = getState();
     state.day = absoluteDay(state, monthIndex(state), dom);
     commit();
+    recordSnapshot();
     syncPrompt();
     refresh();
 }
@@ -427,6 +466,7 @@ function shiftMonth(delta) {
     const target = Math.max(1, monthIndex(state) + delta);
     state.day = absoluteDay(state, target, Math.min(dayOfMonth(state), state.daysInMonth));
     commit();
+    recordSnapshot();
     syncPrompt();
     refresh();
 }
@@ -443,10 +483,17 @@ function parseTag(body) {
         if (eq >= 0 && (colon < 0 || eq < colon)) sep = eq;
         else sep = colon;
         if (sep < 0) continue;
-        const key = chunk.slice(0, sep).trim().toLowerCase();
+        const keyRaw = chunk.slice(0, sep).trim();
+        const key = keyRaw.toLowerCase();
         const value = chunk.slice(sep + 1).trim();
         const field = KEY_ALIASES[key];
-        if (!field) continue;
+        if (!field) {
+            // Произвольные поля: сохраняем как есть (кроме служебного времени сессии)
+            if (key === 'время_сессии' || key === 'time_session') continue;
+            if (!out.custom) out.custom = {};
+            out.custom[keyRaw] = value;
+            continue;
+        }
         if (field === 'day') {
             if (value === '+1' || value === 'следующий') {
                 out.day = state.day + 1;
@@ -477,18 +524,129 @@ function handleMessage(messageId) {
         const match = message.mes.match(TAG_RE);
         if (!match) return;
         const patch = parseTag(match[1]);
+        if (patch && patch.custom) {
+            Object.assign(getState().custom, patch.custom);
+            delete patch.custom;
+        }
         if (Object.keys(patch).length > 0) {
             Object.assign(getState(), patch);
         }
         message.mes = message.mes.replace(TAG_RE, '').replace(/\s+$/, '');
         updateMessageBlock(messageId, message, { rerenderMessage: true });
         commit();
+        recordSnapshot();
         syncPrompt();
         refresh();
         applyWeatherEffect();
     } catch (e) {
         console.error('[scene-panel] tag handling failed', e);
     }
+}
+
+// ---- История снимков сцены и диагностика ----
+
+const HISTORY_KEY = MODULE + '_history';
+const MAX_SNAPSHOTS = 20;
+const DIAG_SCAN = 12;
+
+function snapshotKey(state) {
+    return JSON.stringify({
+        day: state.day,
+        date: state.date,
+        place: state.place,
+        timeOfDay: state.timeOfDay,
+        weather: state.weather,
+        present: state.present,
+        open: state.open,
+        mood: state.mood,
+        custom: state.custom,
+        sessionDay: state.sessionDay,
+        sessionHour: state.sessionHour,
+        sessionMinute: state.sessionMinute,
+    });
+}
+
+// Сохраняет снимок текущего состояния (не чаще, чем меняется состояние)
+function recordSnapshot() {
+    try {
+        const state = getState();
+        const key = snapshotKey(state);
+        if (!Array.isArray(chat_metadata[HISTORY_KEY])) chat_metadata[HISTORY_KEY] = [];
+        const hist = chat_metadata[HISTORY_KEY];
+        const last = hist[hist.length - 1];
+        if (last && last.key === key) return;
+        hist.push({ ts: Date.now(), key, state: JSON.parse(JSON.stringify(state)) });
+        while (hist.length > MAX_SNAPSHOTS) hist.shift();
+    } catch (e) {
+        console.warn('[scene-panel] snapshot failed', e);
+    }
+}
+
+// Собирает scene-теги из последних N сообщений (от новых к старым)
+function collectTagsFromRecent(limit) {
+    const chat = getContext().chat ?? [];
+    const found = [];
+    const start = Math.max(0, chat.length - limit);
+    for (let i = chat.length - 1; i >= start; i -= 1) {
+        const mes = chat[i]?.mes;
+        if (typeof mes !== 'string') continue;
+        const m = mes.match(TAG_RE);
+        if (!m) continue;
+        const patch = parseTag(m[1]);
+        if (patch && Object.keys(patch).length > 0) found.push({ index: i, patch });
+    }
+    return found;
+}
+
+// Восстановление состояния из снимка
+function restoreStateFrom(obj) {
+    const st = getState();
+    for (const k of ['day', 'daysInMonth', 'monthLabel', 'date', 'place', 'timeOfDay', 'weather', 'mood']) {
+        if (obj[k] !== undefined) st[k] = obj[k];
+    }
+    if (Array.isArray(obj.present)) st.present = obj.present.slice();
+    if (Array.isArray(obj.open)) st.open = obj.open.slice();
+    if (obj.custom && typeof obj.custom === 'object') st.custom = JSON.parse(JSON.stringify(obj.custom));
+    if (Number.isFinite(Number(obj.sessionDay))) st.sessionDay = Math.max(1, Math.round(Number(obj.sessionDay)));
+    if (Number.isFinite(Number(obj.sessionHour))) st.sessionHour = Math.min(23, Math.max(0, Math.round(Number(obj.sessionHour))));
+    if (Number.isFinite(Number(obj.sessionMinute))) st.sessionMinute = Math.min(59, Math.max(0, Math.round(Number(obj.sessionMinute))));
+    commit();
+    syncPrompt();
+    refresh();
+    applyWeatherEffect();
+}
+
+// Диагностика: ищет последний тег в истории, иначе — последний снимок
+function runDiagnostics() {
+    const $out = $('#scene_panel_diag_result');
+    const tags = collectTagsFromRecent(DIAG_SCAN);
+    const hist = Array.isArray(chat_metadata[HISTORY_KEY]) ? chat_metadata[HISTORY_KEY] : [];
+    const lines = [];
+    lines.push('Тегов в последних ' + DIAG_SCAN + ' сообщениях: ' + tags.length + '.');
+    lines.push('Снимков в истории: ' + hist.length + '.');
+
+    if (tags.length > 0) {
+        const latest = tags[0];
+        const patch = { ...latest.patch };
+        if (patch.custom) {
+            Object.assign(getState().custom, patch.custom);
+            delete patch.custom;
+        }
+        Object.assign(getState(), patch);
+        commit();
+        syncPrompt();
+        refresh();
+        applyWeatherEffect();
+        lines.push('✅ Восстановлено из тега сообщения #' + (latest.index + 1) + '.');
+    } else if (hist.length > 0) {
+        const snap = hist[hist.length - 1];
+        restoreStateFrom(snap.state);
+        lines.push('✅ Восстановлено из снимка (' + new Date(snap.ts).toLocaleTimeString() + ').');
+    } else {
+        lines.push('⚠️ Нечего восстанавливать: тегов и снимков нет.');
+    }
+
+    $out.text(lines.join(' '));
 }
 
 // Переводит свободный текст погоды в состояние Weather Background.
@@ -682,6 +840,7 @@ function bindEvents() {
 
     const $panel = $('#scene_panel_settings');
     $panel.on('input change', '[data-scene-field]', () => readForm());
+    $panel.on('input change', '#scene_panel_custom', () => readForm());
     $panel.on('click', '#scene_panel_day_plus', () => shiftDay(1));
     $panel.on('click', '#scene_panel_day_minus', () => shiftDay(-1));
     $panel.on('input', '#scene_panel_month_label', (e) => {
@@ -705,12 +864,14 @@ function bindEvents() {
     $panel.on('click', '.scene-cal-prev', () => shiftMonth(-1));
     $panel.on('click', '.scene-cal-next', () => shiftMonth(1));
     $panel.on('click', '#scene_panel_reset', () => {
+        recordSnapshot(); // сохраняем состояние ДО сброса, чтобы можно было восстановить
         chat_metadata[MODULE] = emptyState();
         commit();
         syncPrompt();
         refresh();
         applyWeatherEffect(true);
     });
+    $panel.on('click', '#scene_panel_diag', () => runDiagnostics());
     $panel.on('change', '#scene_panel_inject', (e) => {
         getSettings().inject = !!e.target.checked;
         syncPrompt();
