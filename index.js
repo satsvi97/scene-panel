@@ -196,7 +196,9 @@ function refresh() {
                 if ($(this).val() !== text) $(this).val(text);
             }
         });
-        $panel.find('#scene_panel_day_label').text('день ' + state.day);
+        $('#scene_panel_day_label').text('день ' + state.day);
+        $('#scene_panel_day_compact').text('день ' + state.day);
+        $('#scene_panel_floating_compact').prop('checked', getSettings().floating);
         $panel.find('#scene_panel_month_label').val(state.monthLabel);
         $panel.find('#scene_panel_month_len').val(String(state.daysInMonth));
         $panel.find('#scene_panel_inject').prop('checked', getSettings().inject);
@@ -378,7 +380,73 @@ function enableDrag() {
     head.addEventListener('pointercancel', stop);
 }
 
+function mountModal(panelHtml) {
+    const modal = [
+        '<div id="scene_panel_modal" class="scene-panel-modal" aria-hidden="true">',
+        '  <div class="scene-panel-modal-card" role="dialog" aria-label="Scene Panel">',
+        '    <div class="scene-panel-modal-head">',
+        '      <span class="scene-panel-modal-title">🕯 Панель сцены</span>',
+        '      <span class="scene-panel-modal-day" id="scene_panel_day_label">день 1</span>',
+        '      <span class="scene-panel-modal-x" id="scene_panel_modal_close" title="закрыть">×</span>',
+        '    </div>',
+        '    <div class="scene-panel-modal-body" id="scene_panel_modal_body"></div>',
+        '  </div>',
+        '</div>',
+    ].join('');
+    $('body').append(modal);
+    $('#scene_panel_modal_body').append(panelHtml);
+}
+
+function mountTopButton() {
+    if ($('#scene_panel_topbtn').length > 0) return;
+    const $holder = $('#top-settings-holder');
+    const $btn = $('<div>')
+        .attr('id', 'scene_panel_topbtn')
+        .addClass('scene-panel-topbtn')
+        .attr('title', 'Scene Panel — календарь и сцена')
+        .text('🕯');
+    if ($holder.length > 0) {
+        $holder.append($btn);
+    } else {
+        $('body').append($btn.addClass('is-floating'));
+    }
+    $btn.on('click', () => openModal());
+}
+
+function openModal() {
+    const $modal = $('#scene_panel_modal');
+    if ($modal.length === 0) return;
+    $modal.addClass('is-open').attr('aria-hidden', 'false');
+    refresh();
+}
+
+function closeModal() {
+    const $modal = $('#scene_panel_modal');
+    if ($modal.length === 0) return;
+    $modal.removeClass('is-open').attr('aria-hidden', 'true');
+}
+
 function bindEvents() {
+    $('#scene_panel_open_modal').on('click', () => openModal());
+    $('#scene_panel_topbtn').on('click', () => openModal());
+    $('#scene_panel_modal_close').on('click', () => closeModal());
+    $('#scene_panel_modal').on('click', (e) => {
+        if (e.target && e.target.id === 'scene_panel_modal') closeModal();
+    });
+    $(document).on('keydown.scenePanel', (e) => {
+        if (e.key === 'Escape') closeModal();
+    });
+    $('#scene_panel_floating_compact').on('change', (e) => {
+        getSettings().floating = !!e.target.checked;
+        try {
+            saveSettings();
+        } catch (err) {
+            /* ignore */
+        }
+        renderFloating();
+        refresh();
+    });
+
     const $panel = $('#scene_panel_settings');
     $panel.on('input change', '[data-scene-field]', () => readForm());
     $panel.on('click', '#scene_panel_day_plus', () => shiftDay(1));
@@ -463,8 +531,12 @@ function bindEvents() {
 
 jQuery(async () => {
     try {
-        const html = await renderExtensionTemplateAsync(EXT_NAME, 'settings');
-        $('#extensions_settings2').append(html);
+        const compactHtml = await renderExtensionTemplateAsync(EXT_NAME, 'settings');
+        $('#extensions_settings2').append(compactHtml);
+
+        const panelHtml = await renderExtensionTemplateAsync(EXT_NAME, 'panel');
+        mountModal(panelHtml);
+        mountTopButton();
 
         const floatHtml = await renderExtensionTemplateAsync(EXT_NAME, 'floating');
         $('body').append(floatHtml);
