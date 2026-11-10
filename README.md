@@ -22,7 +22,7 @@
 Установка по URL (если ваша сборка умеет):
 
 ```
-https://github.com/<ваш-ник>/scene-panel
+https://github.com/satsvi97/scene-panel
 ```
 
 ## Формат тега
