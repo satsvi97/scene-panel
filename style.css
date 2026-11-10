@@ -531,3 +531,51 @@
         font-size: 19px;
     }
 }
+
+/* ---- поля ввода: тёмное стекло вместо белых плашек ---- */
+
+.scene-panel-settings input[type="text"],
+.scene-panel-settings input[type="number"],
+.scene-panel-settings textarea,
+.scene-panel-settings select {
+    background-color: rgba(13, 9, 20, 0.62) !important;
+    background-image: none !important;
+    border: 1px solid rgba(160, 150, 220, 0.38) !important;
+    border-radius: 8px !important;
+    color: #ece9fb !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+    -webkit-appearance: none;
+    appearance: none;
+    color-scheme: dark;
+}
+
+.scene-panel-settings input::placeholder,
+.scene-panel-settings textarea::placeholder {
+    color: rgba(200, 195, 230, 0.45) !important;
+    opacity: 1;
+}
+
+.scene-panel-settings input:focus,
+.scene-panel-settings textarea:focus,
+.scene-panel-settings select:focus {
+    border-color: rgba(184, 184, 255, 0.8) !important;
+    box-shadow: 0 0 0 2px rgba(184, 184, 255, 0.18) !important;
+    outline: none !important;
+}
+
+.scene-panel-settings input[type="checkbox"] {
+    accent-color: #b8b8ff;
+}
+
+.scene-panel-settings .menu_button {
+    background: rgba(25, 20, 40, 0.78) !important;
+    border: 1px solid rgba(160, 150, 220, 0.4) !important;
+    color: #e8e6f6 !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+}
+
+.scene-panel-settings .menu_button:hover {
+    background: rgba(184, 184, 255, 0.18) !important;
+    box-shadow: 0 0 12px rgba(184, 184, 255, 0.3) !important;
+}
