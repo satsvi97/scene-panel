@@ -388,7 +388,7 @@ function mountModal(panelHtml) {
         '<div id="scene_panel_modal" class="scene-panel-modal" aria-hidden="true">',
         '  <div class="scene-panel-modal-card" role="dialog" aria-label="Scene Panel">',
         '    <div class="scene-panel-modal-head">',
-        '      <span class="scene-panel-modal-title">🕯 Панель сцены</span>',
+        '      <span class="scene-panel-modal-title">☾ Панель сцены</span>',
         '      <span class="scene-panel-modal-day" id="scene_panel_day_label">день 1</span>',
         '      <span class="scene-panel-modal-x" id="scene_panel_modal_close" title="закрыть">×</span>',
         '    </div>',
@@ -407,7 +407,7 @@ function mountTopButton() {
         .attr('id', 'scene_panel_topbtn')
         .addClass('scene-panel-topbtn')
         .attr('title', 'Scene Panel — календарь и сцена')
-        .text('🕯');
+        .text('☾');
     if ($holder.length > 0) {
         const $drawer = $('<div>').addClass('drawer scene-panel-drawer');
         const $toggle = $('<div>').addClass('drawer-toggle');

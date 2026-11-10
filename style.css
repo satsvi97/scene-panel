@@ -487,7 +487,7 @@
     overflow-y: auto;
 }
 
-/* ---- кнопка в верхней строке ---- */
+/* ---- кнопка в верхней строке: метрики как у иконок темы ---- */
 
 .scene-panel-drawer {
     width: auto !important;
@@ -502,25 +502,27 @@
 }
 
 .scene-panel-topbtn {
-    display: inline-flex;
+    display: flex;
     align-items: center;
     justify-content: center;
+    width: var(--icon-size, 38px);
+    height: var(--icon-size, 38px);
+    padding: 0;
+    margin: 0;
     cursor: pointer;
-    padding: 1px 3px;
-    font-size: var(--topBarIconSize, 20px);
+    font-size: 26px;
     line-height: 1;
+    color: #b8b8ff;
     border-radius: 8px;
-    opacity: 0.75;
+    text-shadow: 0 0 10px rgba(180, 170, 255, 0.8);
     user-select: none;
-    text-shadow: 0 0 10px rgba(184, 184, 255, 0.8);
-    transition: opacity 120ms ease, background 120ms ease, filter 120ms ease, text-shadow 120ms ease;
+    transition: all 0.2s ease;
 }
 
 .scene-panel-topbtn:hover {
-    opacity: 1;
-    background: rgba(160, 150, 220, 0.18);
-    filter: drop-shadow(0 0 10px rgba(184, 184, 255, 0.8));
-    text-shadow: 0 0 16px rgba(184, 184, 255, 1);
+    transform: scale(1.15);
+    filter: drop-shadow(0 0 12px rgba(180, 170, 255, 1));
+    background: transparent;
 }
 
 .scene-panel-topbtn.is-floating {
@@ -528,8 +530,6 @@
     top: 8px;
     right: 8px;
     z-index: 4500;
-    width: 36px;
-    height: 36px;
     background: rgba(22, 18, 34, 0.86);
     border: 1px solid rgba(160, 150, 220, 0.45);
 }
@@ -548,7 +548,6 @@
 }
 
 /* ---- поля ввода: тёмное стекло вместо белых плашек ---- */
-
 .scene-panel-settings input[type="text"],
 .scene-panel-settings input[type="number"],
 .scene-panel-settings textarea,
@@ -593,4 +592,42 @@
 .scene-panel-settings .menu_button:hover {
     background: rgba(184, 184, 255, 0.18) !important;
     box-shadow: 0 0 12px rgba(184, 184, 255, 0.3) !important;
+}
+
+/* ---- компактный блок в меню «Расширения» ---- */
+
+.scene-panel-compact {
+    gap: 8px;
+}
+
+.scene-panel-compact .scene-panel-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0;
+    background: transparent;
+    border: none;
+}
+
+.scene-panel-compact .scene-panel-hint {
+    max-width: none;
+}
+
+.scene-panel-compact .scene-panel-actions {
+    display: block;
+}
+
+.scene-panel-compact #scene_panel_open_modal {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+    white-space: normal;
+    padding: 9px 10px;
+    line-height: 1.35;
+    font-size: 0.95em;
+}
+
+.scene-panel-compact .scene-panel-check {
+    margin-top: 2px;
 }
