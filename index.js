@@ -121,7 +121,10 @@ function sceneText(state) {
     if (state.present.length > 0) parts.push('рядом: ' + state.present.join(', '));
     if (state.open.length > 0) parts.push('не закрыто: ' + state.open.join('; '));
     if (state.mood) parts.push('тон: ' + state.mood);
-    return parts.join('. ') + '.';
+    return parts.join('. ') + '. ' +
+        'Это текущее состояние сцены. Если в твоём ответе меняются место, время, состав сцены, ' +
+        'закрываются или появляются нити — добавь в самом конце ответа ровно одну строку ' +
+        '[[scene: место=…; время=…; рядом=…; висит=…; тон=…]] и не упоминай её в тексте.';
 }
 
 function injectionRole() {
@@ -406,11 +409,19 @@ function mountTopButton() {
         .attr('title', 'Scene Panel — календарь и сцена')
         .text('🕯');
     if ($holder.length > 0) {
-        $holder.append($btn);
+        const $drawer = $('<div>').addClass('drawer scene-panel-drawer');
+        const $toggle = $('<div>').addClass('drawer-toggle');
+        $toggle.append($btn);
+        $drawer.append($toggle);
+        $holder.append($drawer);
     } else {
         $('body').append($btn.addClass('is-floating'));
     }
-    $btn.on('click', () => openModal());
+    $btn.on('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openModal();
+    });
 }
 
 function openModal() {

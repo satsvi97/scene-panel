@@ -489,25 +489,38 @@
 
 /* ---- кнопка в верхней строке ---- */
 
-.scene-panel-topbtn {
+.scene-panel-drawer {
+    width: auto !important;
+    flex: 0 0 auto;
+}
+
+.scene-panel-drawer > .drawer-toggle {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
-    font-size: 17px;
-    line-height: 1;
+    width: auto;
+}
+
+.scene-panel-topbtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
+    padding: 1px 3px;
+    font-size: var(--topBarIconSize, 20px);
+    line-height: 1;
     border-radius: 8px;
     opacity: 0.75;
     user-select: none;
-    transition: opacity 120ms ease, background 120ms ease, box-shadow 120ms ease;
+    text-shadow: 0 0 10px rgba(184, 184, 255, 0.8);
+    transition: opacity 120ms ease, background 120ms ease, filter 120ms ease, text-shadow 120ms ease;
 }
 
 .scene-panel-topbtn:hover {
     opacity: 1;
     background: rgba(160, 150, 220, 0.18);
-    box-shadow: 0 0 12px rgba(184, 184, 255, 0.35);
+    filter: drop-shadow(0 0 10px rgba(184, 184, 255, 0.8));
+    text-shadow: 0 0 16px rgba(184, 184, 255, 1);
 }
 
 .scene-panel-topbtn.is-floating {
@@ -515,6 +528,8 @@
     top: 8px;
     right: 8px;
     z-index: 4500;
+    width: 36px;
+    height: 36px;
     background: rgba(22, 18, 34, 0.86);
     border: 1px solid rgba(160, 150, 220, 0.45);
 }
