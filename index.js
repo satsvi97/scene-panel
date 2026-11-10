@@ -17,7 +17,7 @@ import {
 } from '../../../extensions.js';
 
 const MODULE = 'scene_panel';
-const EXT_NAME = 'scene-panel';
+const EXT_NAME = 'third-party/scene-panel';
 const PROMPT_KEY = 'SCENE_PANEL';
 const TAG_RE = /\[\[\s*scene\s*:\s*([\s\S]*?)\]\]/i;
 
