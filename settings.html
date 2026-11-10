@@ -1,16 +1,22 @@
-<div class="scene-panel-settings scene-panel-compact" id="scene_panel_settings_compact">
-    <div class="scene-panel-header">
-        <span class="scene-panel-title">🕯 Scene Panel</span>
-        <span class="scene-panel-day" id="scene_panel_day_compact">день 1</span>
+<div class="scene-panel-wrap" id="scene_panel_settings_compact">
+    <div class="inline-drawer">
+        <div class="inline-drawer-toggle inline-drawer-header">
+            <b>Scene Panel</b>
+            <span class="scene-panel-day" id="scene_panel_day_compact">день 1</span>
+            <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
+        </div>
+        <div class="inline-drawer-content">
+            <label class="checkbox_label scene-panel-check">
+                <input type="checkbox" id="scene_panel_enabled">
+                <span>расширение включено</span>
+            </label>
+            <div class="scene-panel-actions">
+                <div class="menu_button" id="scene_panel_open_modal">открыть панель сцены</div>
+            </div>
+            <div class="scene-panel-hint">
+                Календарь, место, состав сцены и открытые нити. ИИ обновляет их тегом
+                <code>[[scene: …]]</code> в конце ответа.
+            </div>
+        </div>
     </div>
-    <div class="scene-panel-hint">
-        Полная панель открывается кнопкой 🕯 в верхней строке таверны — или отсюда.
-    </div>
-    <div class="scene-panel-actions">
-        <div class="menu_button" id="scene_panel_open_modal">открыть панель сцены</div>
-    </div>
-    <label class="checkbox_label scene-panel-check">
-        <input type="checkbox" id="scene_panel_floating_compact">
-        <span>плавающая карточка в чате</span>
-    </label>
 </div>

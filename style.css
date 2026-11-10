@@ -594,30 +594,26 @@
     box-shadow: 0 0 12px rgba(184, 184, 255, 0.3) !important;
 }
 
-/* ---- компактный блок в меню «Расширения» ---- */
+/* ---- штатная сворачиваемая вкладка в меню «Расширения» ---- */
 
-.scene-panel-compact {
-    gap: 8px;
-}
-
-.scene-panel-compact .scene-panel-header {
+.scene-panel-wrap .inline-drawer-content {
     display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: 8px;
-    padding: 0;
-    background: transparent;
-    border: none;
+    padding-top: 6px;
 }
 
-.scene-panel-compact .scene-panel-hint {
-    max-width: none;
+.scene-panel-wrap .scene-panel-day {
+    margin-left: auto;
+    margin-right: 6px;
+    opacity: 0.75;
+    font-size: 0.85em;
+    border: 1px solid rgba(150, 140, 210, 0.5);
+    border-radius: 999px;
+    padding: 1px 9px;
 }
 
-.scene-panel-compact .scene-panel-actions {
-    display: block;
-}
-
-.scene-panel-compact #scene_panel_open_modal {
+.scene-panel-wrap #scene_panel_open_modal {
     display: block;
     width: 100%;
     box-sizing: border-box;
@@ -625,9 +621,14 @@
     white-space: normal;
     padding: 9px 10px;
     line-height: 1.35;
-    font-size: 0.95em;
 }
 
-.scene-panel-compact .scene-panel-check {
-    margin-top: 2px;
+.scene-panel-wrap .scene-panel-check {
+    margin: 0;
+}
+
+.scene-panel-wrap .scene-panel-hint {
+    font-size: 0.85em;
+    opacity: 0.7;
+    line-height: 1.4;
 }

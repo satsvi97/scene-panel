@@ -53,13 +53,18 @@ function emptyState() {
 
 function getSettings() {
     if (!extension_settings[MODULE] || typeof extension_settings[MODULE] !== 'object') {
-        extension_settings[MODULE] = { inject: true, role: 'system', floating: true, floatPos: null };
+        extension_settings[MODULE] = { enabled: true, inject: true, role: 'system', floating: true, floatPos: null };
     }
     const s = extension_settings[MODULE];
+    if (typeof s.enabled !== 'boolean') s.enabled = true;
     if (typeof s.inject !== 'boolean') s.inject = true;
     if (typeof s.floating !== 'boolean') s.floating = true;
     if (typeof s.role !== 'string') s.role = 'system';
     return s;
+}
+
+function isEnabled() {
+    return getSettings().enabled !== false;
 }
 
 function getState() {
@@ -136,7 +141,7 @@ function injectionRole() {
 
 function syncPrompt() {
     const settings = getSettings();
-    if (!settings.inject) {
+    if (!settings.inject || !isEnabled()) {
         setExtensionPrompt(PROMPT_KEY, '', extension_prompt_types.NONE, 0, false, extension_prompt_roles.SYSTEM);
         return;
     }
@@ -167,7 +172,7 @@ function renderCalendar(targetId) {
 function renderFloating() {
     const $float = $('#scene_panel_float');
     if ($float.length === 0) return;
-    if (!getSettings().floating) {
+    if (!isEnabled() || !getSettings().floating) {
         $float.hide();
         return;
     }
@@ -201,7 +206,8 @@ function refresh() {
         });
         $('#scene_panel_day_label').text('день ' + state.day);
         $('#scene_panel_day_compact').text('день ' + state.day);
-        $('#scene_panel_floating_compact').prop('checked', getSettings().floating);
+        $('#scene_panel_enabled').prop('checked', isEnabled());
+        $('#scene_panel_topbtn').toggle(isEnabled());
         $panel.find('#scene_panel_month_label').val(state.monthLabel);
         $panel.find('#scene_panel_month_len').val(String(state.daysInMonth));
         $panel.find('#scene_panel_inject').prop('checked', getSettings().inject);
@@ -297,6 +303,7 @@ function parseTag(body) {
 
 function handleMessage(messageId) {
     try {
+        if (!isEnabled()) return;
         const message = getContext().chat?.[messageId];
         if (!message || typeof message.mes !== 'string') return;
         const match = message.mes.match(TAG_RE);
@@ -447,14 +454,21 @@ function bindEvents() {
     $(document).on('keydown.scenePanel', (e) => {
         if (e.key === 'Escape') closeModal();
     });
-    $('#scene_panel_floating_compact').on('change', (e) => {
-        getSettings().floating = !!e.target.checked;
+    $('#scene_panel_enabled').on('change', (e) => {
+        getSettings().enabled = !!e.target.checked;
         try {
             saveSettings();
         } catch (err) {
             /* ignore */
         }
-        renderFloating();
+        if (!isEnabled()) {
+            $('#scene_panel_float').hide();
+            $('#scene_panel_modal').removeClass('is-open');
+            setExtensionPrompt(PROMPT_KEY, '', extension_prompt_types.NONE, 0, false, extension_prompt_roles.SYSTEM);
+        } else {
+            renderFloating();
+            syncPrompt();
+        }
         refresh();
     });
 
