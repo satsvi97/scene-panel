@@ -1,0 +1,12 @@
+{
+  "display_name": "Scene Panel",
+  "loading_order": 100,
+  "requires": [],
+  "optional": [],
+  "js": "index.js",
+  "css": "style.css",
+  "author": "Svitlana",
+  "version": "0.1.0",
+  "homePage": "https://github.com/your-name/scene-panel",
+  "auto_update": false
+}

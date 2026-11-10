@@ -1,0 +1,60 @@
+<div class="scene-panel-settings" id="scene_panel_settings">
+    <div class="scene-panel-header">
+        <span class="scene-panel-title">🕯 Scene Panel</span>
+        <span class="scene-panel-day" id="scene_panel_day_label">день 1</span>
+    </div>
+    <div class="scene-panel-hint">
+        Состояние живёт в этом чате. ИИ обновляет его тегом в конце сообщения:
+        <code>[[scene: место=Дворец Ночи; время=утро; рядом=Ризанд; висит=разговор с Фейрой]]</code> — тег из текста вырезается.
+    </div>
+    <label class="scene-panel-field">
+        <span>Дата</span>
+        <input type="text" data-scene-field="date" placeholder="12-е, месяц Сиреневой Луны">
+    </label>
+    <label class="scene-panel-field">
+        <span>Место</span>
+        <input type="text" data-scene-field="place" placeholder="Дворец Ночи, покои Ризанда">
+    </label>
+    <div class="scene-panel-row">
+        <label class="scene-panel-field">
+            <span>Время</span>
+            <input type="text" data-scene-field="timeOfDay" placeholder="утро">
+        </label>
+        <label class="scene-panel-field">
+            <span>Погода</span>
+            <input type="text" data-scene-field="weather" placeholder="ясно, прохладно">
+        </label>
+    </div>
+    <label class="scene-panel-field">
+        <span>Рядом (через запятую)</span>
+        <input type="text" data-scene-field="present" placeholder="Ризанд, Никс">
+    </label>
+    <label class="scene-panel-field">
+        <span>Висит (каждое с новой строки)</span>
+        <textarea data-scene-field="open" rows="3" placeholder="Никс ждёт ответа&#10;Фейра назначила разговор"></textarea>
+    </label>
+    <label class="scene-panel-field">
+        <span>Тон</span>
+        <input type="text" data-scene-field="mood" placeholder="хрупкое перемирие">
+    </label>
+    <div class="scene-panel-actions">
+        <div class="menu_button" id="scene_panel_day_plus">+ день</div>
+        <div class="menu_button" id="scene_panel_reset">сбросить</div>
+    </div>
+    <label class="checkbox_label scene-panel-check">
+        <input type="checkbox" id="scene_panel_inject">
+        <span>вставлять сцену в промпт</span>
+    </label>
+    <label class="scene-panel-field scene-panel-inline">
+        <span>роль инжекта</span>
+        <select id="scene_panel_role">
+            <option value="system">system</option>
+            <option value="user">user</option>
+            <option value="assistant">assistant</option>
+        </select>
+    </label>
+    <label class="checkbox_label scene-panel-check">
+        <input type="checkbox" id="scene_panel_floating">
+        <span>плавающая панель в чате</span>
+    </label>
+</div>
