@@ -5,10 +5,35 @@
     </div>
     <div class="scene-panel-hint">
         Состояние живёт в этом чате. ИИ обновляет его тегом в конце сообщения:
-        <code>[[scene: место=Дворец Ночи; время=утро; рядом=Ризанд; висит=разговор с Фейрой]]</code> — тег из текста вырезается.
+        <code>[[scene: день=+1; место=Дворец Ночи; время=утро; рядом=Ризанд; висит=разговор с Фейрой]]</code> — тег из текста вырезается.
     </div>
+
+    <div class="scene-cal" id="scene_panel_cal">
+        <div class="scene-cal-head">
+            <span class="scene-cal-btn scene-cal-prev" title="предыдущий месяц">‹</span>
+            <span class="scene-cal-title">месяц 1</span>
+            <span class="scene-cal-btn scene-cal-next" title="следующий месяц">›</span>
+        </div>
+        <div class="scene-cal-grid"></div>
+        <div class="scene-cal-actions">
+            <div class="menu_button" id="scene_panel_day_minus">− день</div>
+            <div class="menu_button" id="scene_panel_day_plus">+ день</div>
+        </div>
+    </div>
+
+    <div class="scene-panel-row">
+        <label class="scene-panel-field">
+            <span>Название месяца</span>
+            <input type="text" id="scene_panel_month_label" placeholder="Сиреневый">
+        </label>
+        <label class="scene-panel-field scene-panel-narrow">
+            <span>Дней в месяце</span>
+            <input type="number" id="scene_panel_month_len" min="5" max="60" step="1" value="30">
+        </label>
+    </div>
+
     <label class="scene-panel-field">
-        <span>Дата</span>
+        <span>Дата словами</span>
         <input type="text" data-scene-field="date" placeholder="12-е, месяц Сиреневой Луны">
     </label>
     <label class="scene-panel-field">
@@ -38,7 +63,6 @@
         <input type="text" data-scene-field="mood" placeholder="хрупкое перемирие">
     </label>
     <div class="scene-panel-actions">
-        <div class="menu_button" id="scene_panel_day_plus">+ день</div>
         <div class="menu_button" id="scene_panel_reset">сбросить</div>
     </div>
     <label class="checkbox_label scene-panel-check">

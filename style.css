@@ -1,4 +1,4 @@
-/* Scene Panel — нейтральные стили, работают с любой темой таверны */
+/* Scene Panel 0.3.0 — календарь + мобильная раскладка */
 
 .scene-panel-settings {
     display: flex;
@@ -53,6 +53,7 @@
 }
 
 .scene-panel-field input[type="text"],
+.scene-panel-field input[type="number"],
 .scene-panel-field textarea,
 .scene-panel-field select {
     width: 100%;
@@ -72,6 +73,10 @@
 .scene-panel-row .scene-panel-field {
     flex: 1 1 0;
     min-width: 0;
+}
+
+.scene-panel-row .scene-panel-narrow {
+    flex: 0 0 38%;
 }
 
 .scene-panel-actions {
@@ -96,6 +101,86 @@
     width: auto;
 }
 
+/* ---- календарь ---- */
+
+.scene-cal {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    border: 1px solid rgba(150, 140, 210, 0.35);
+    border-radius: 10px;
+    padding: 6px;
+}
+
+.scene-cal-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.9em;
+}
+
+.scene-cal-title {
+    flex: 1;
+    text-align: center;
+    font-weight: 600;
+    text-transform: lowercase;
+}
+
+.scene-cal-btn {
+    cursor: pointer;
+    padding: 0 8px;
+    border-radius: 6px;
+    opacity: 0.75;
+    user-select: none;
+}
+
+.scene-cal-btn:hover {
+    opacity: 1;
+    background: rgba(160, 150, 220, 0.22);
+}
+
+.scene-cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+
+.scene-cal-day {
+    text-align: center;
+    padding: 4px 0;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 11px;
+    line-height: 1.2;
+    border: 1px solid transparent;
+    user-select: none;
+}
+
+.scene-cal-day:hover {
+    background: rgba(160, 150, 220, 0.22);
+}
+
+.scene-cal-day.is-future {
+    opacity: 0.45;
+}
+
+.scene-cal-day.is-today {
+    background: #b8b8ff;
+    color: #14101f;
+    font-weight: 700;
+    border-color: #d4d4ff;
+}
+
+.scene-cal-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.scene-cal-actions .menu_button {
+    flex: 1;
+    text-align: center;
+}
+
 /* ---- плавающая панель ---- */
 
 .scene-panel-float {
@@ -103,11 +188,12 @@
     right: 14px;
     bottom: 96px;
     z-index: 4000;
-    width: 226px;
-    padding: 8px 10px;
+    width: 214px;
+    max-width: calc(100vw - 16px);
+    padding: 8px 9px;
     border-radius: 12px;
     border: 1px solid rgba(160, 150, 220, 0.45);
-    background: rgba(22, 18, 34, 0.82);
+    background: rgba(22, 18, 34, 0.86);
     -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
     box-shadow: 0 8px 26px rgba(0, 0, 0, 0.45);
@@ -119,8 +205,14 @@
 .scene-panel-float-head {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
     margin-bottom: 4px;
+    touch-action: none;
+    cursor: grab;
+}
+
+.scene-panel-float-head:active {
+    cursor: grabbing;
 }
 
 .scene-panel-float-day {
@@ -135,7 +227,9 @@
 .scene-panel-float-btn {
     cursor: pointer;
     border-radius: 6px;
-    padding: 0 5px;
+    padding: 0 6px;
+    min-width: 20px;
+    text-align: center;
     opacity: 0.75;
     user-select: none;
 }
@@ -143,6 +237,25 @@
 .scene-panel-float-btn:hover {
     opacity: 1;
     background: rgba(160, 150, 220, 0.22);
+}
+
+.scene-cal-compact {
+    border: none;
+    padding: 0;
+    margin-bottom: 4px;
+}
+
+.scene-cal-compact .scene-cal-day {
+    padding: 2px 0;
+    font-size: 10px;
+}
+
+.scene-cal-compact .scene-cal-head {
+    font-size: 11px;
+}
+
+.scene-panel-float.is-collapsed .scene-panel-float-body {
+    display: none;
 }
 
 .scene-panel-float-place {
@@ -154,6 +267,17 @@
 .scene-panel-float-sub {
     opacity: 0.7;
     font-size: 11px;
+}
+
+.scene-panel-float-mood {
+    font-size: 11px;
+    font-style: italic;
+    opacity: 0.6;
+    margin-top: 2px;
+}
+
+.scene-panel-float-mood:empty {
+    display: none;
 }
 
 .scene-panel-float-threads {
@@ -173,19 +297,63 @@
     opacity: 0.5;
 }
 
-.scene-panel-float-mood {
-    font-size: 11px;
-    font-style: italic;
-    opacity: 0.6;
-    margin-top: 2px;
-}
+/* ---- телефоны и планшеты ---- */
 
-.scene-panel-float-mood:empty {
-    display: none;
-}
+@media (max-width: 768px) {
+    /* поля крупнее, чтобы не срабатывал зум и удобно попадать пальцем */
+    .scene-panel-field input[type="text"],
+    .scene-panel-field input[type="number"],
+    .scene-panel-field textarea,
+    .scene-panel-field select {
+        font-size: 16px;
+        min-height: 38px;
+        padding: 4px 8px;
+    }
 
-@media (max-width: 1000px) {
+    .scene-panel-row {
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .scene-panel-row .scene-panel-narrow {
+        flex: 1 1 auto;
+    }
+
+    .scene-cal-day {
+        padding: 9px 0;
+        font-size: 13px;
+    }
+
+    .scene-cal-actions .menu_button {
+        padding: 10px 0;
+        font-size: 1em;
+    }
+
     .scene-panel-float {
-        display: none !important;
+        width: 178px;
+        font-size: 12px;
+        bottom: 78px;
+        right: 8px;
+    }
+
+    .scene-cal-compact .scene-cal-day {
+        padding: 5px 0;
+        font-size: 11px;
+    }
+
+    .scene-panel-float-btn {
+        padding: 2px 8px;
+        min-width: 26px;
+    }
+}
+
+@media (max-width: 420px) {
+    .scene-panel-float {
+        width: 160px;
+    }
+
+    .scene-cal-compact .scene-cal-day {
+        padding: 4px 0;
+        font-size: 10px;
     }
 }

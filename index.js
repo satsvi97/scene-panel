@@ -20,6 +20,8 @@ const MODULE = 'scene_panel';
 const EXT_NAME = 'third-party/scene-panel';
 const PROMPT_KEY = 'SCENE_PANEL';
 const TAG_RE = /\[\[\s*scene\s*:\s*([\s\S]*?)\]\]/i;
+const MIN_MONTH = 5;
+const MAX_MONTH = 60;
 
 const KEY_ALIASES = {
     'день': 'day', 'day': 'day',
@@ -32,9 +34,13 @@ const KEY_ALIASES = {
     'тон': 'mood', 'mood': 'mood',
 };
 
+let saveSettings = () => {};
+
 function emptyState() {
     return {
         day: 1,
+        daysInMonth: 30,
+        monthLabel: '',
         date: '',
         place: '',
         timeOfDay: '',
@@ -47,7 +53,7 @@ function emptyState() {
 
 function getSettings() {
     if (!extension_settings[MODULE] || typeof extension_settings[MODULE] !== 'object') {
-        extension_settings[MODULE] = { inject: true, role: 'system', floating: true };
+        extension_settings[MODULE] = { inject: true, role: 'system', floating: true, floatPos: null };
     }
     const s = extension_settings[MODULE];
     if (typeof s.inject !== 'boolean') s.inject = true;
@@ -63,6 +69,9 @@ function getState() {
     const s = chat_metadata[MODULE];
     const day = Number(s.day);
     s.day = Number.isFinite(day) && day > 0 ? Math.round(day) : 1;
+    const dim = Number(s.daysInMonth);
+    s.daysInMonth = Number.isFinite(dim) && dim >= MIN_MONTH && dim <= MAX_MONTH ? Math.round(dim) : 30;
+    if (typeof s.monthLabel !== 'string') s.monthLabel = '';
     for (const k of ['date', 'place', 'timeOfDay', 'weather', 'mood']) {
         if (typeof s[k] !== 'string') s[k] = '';
     }
@@ -71,6 +80,24 @@ function getState() {
     s.present = s.present.filter((x) => typeof x === 'string' && x.trim().length > 0);
     s.open = s.open.filter((x) => typeof x === 'string' && x.trim().length > 0);
     return s;
+}
+
+function monthIndex(state) {
+    return Math.floor((state.day - 1) / state.daysInMonth) + 1;
+}
+
+function dayOfMonth(state) {
+    return ((state.day - 1) % state.daysInMonth) + 1;
+}
+
+function absoluteDay(state, month, dom) {
+    return (month - 1) * state.daysInMonth + dom;
+}
+
+function monthTitle(state) {
+    const idx = monthIndex(state);
+    const label = state.monthLabel.trim();
+    return label ? label + ' · ' + idx : 'месяц ' + idx;
 }
 
 function commit() {
@@ -84,7 +111,10 @@ function commit() {
 
 function sceneText(state) {
     const parts = [];
-    parts.push('Сцена: день ' + state.day + (state.date ? ' (' + state.date + ')' : ''));
+    const dom = dayOfMonth(state);
+    parts.push('Сцена: день ' + state.day + ' (месяц ' + monthIndex(state) + ', ' + dom + '-е)');
+    if (state.monthLabel.trim()) parts.push('месяц: ' + state.monthLabel.trim());
+    if (state.date) parts.push('дата: ' + state.date);
     if (state.place) parts.push('место: ' + state.place);
     const when = [state.timeOfDay, state.weather].filter(Boolean).join(', ');
     if (when) parts.push('обстановка: ' + when);
@@ -108,6 +138,118 @@ function syncPrompt() {
         return;
     }
     setExtensionPrompt(PROMPT_KEY, sceneText(getState()), extension_prompt_types.IN_PROMPT, 0, false, injectionRole());
+}
+
+function renderCalendar(targetId) {
+    const $root = $('#' + targetId);
+    if ($root.length === 0) return;
+    const state = getState();
+    const dom = dayOfMonth(state);
+
+    $root.find('.scene-cal-title').text(monthTitle(state));
+    const $grid = $root.find('.scene-cal-grid').empty();
+    for (let d = 1; d <= state.daysInMonth; d++) {
+        const classes = ['scene-cal-day'];
+        if (d === dom) classes.push('is-today');
+        if (d > dom) classes.push('is-future');
+        $grid.append(
+            $('<div>')
+                .addClass(classes.join(' '))
+                .attr('data-cal-day', String(d))
+                .text(String(d)),
+        );
+    }
+}
+
+function renderFloating() {
+    const $float = $('#scene_panel_float');
+    if ($float.length === 0) return;
+    if (!getSettings().floating) {
+        $float.hide();
+        return;
+    }
+    $float.show();
+    applyFloatPos();
+    const state = getState();
+    $float.find('#scene_panel_float_day').text('день ' + state.day);
+    $float.find('#scene_panel_float_place').text(state.place || '—');
+    $float.find('#scene_panel_float_when').text([state.timeOfDay, state.weather].filter(Boolean).join(' · '));
+    $float.find('#scene_panel_float_present').text(state.present.length > 0 ? state.present.join(' · ') : '—');
+    $float.find('#scene_panel_float_mood').text(state.mood || '');
+    const $open = $float.find('#scene_panel_float_open').empty();
+    if (state.open.length === 0) {
+        $open.append($('<div>').addClass('scene-panel-float-empty').text('нет открытых нитей'));
+    } else {
+        state.open.forEach((line) => $open.append($('<div>').addClass('scene-panel-float-thread').text('✦ ' + line)));
+    }
+}
+
+function refresh() {
+    const state = getState();
+    const $panel = $('#scene_panel_settings');
+    if ($panel.length > 0) {
+        $panel.find('[data-scene-field]').each(function () {
+            const field = $(this).attr('data-scene-field');
+            const value = state[field];
+            if ($(this).is('textarea') || $(this).is('input')) {
+                const text = Array.isArray(value) ? value.join(field === 'open' ? '\n' : ', ') : String(value ?? '');
+                if ($(this).val() !== text) $(this).val(text);
+            }
+        });
+        $panel.find('#scene_panel_day_label').text('день ' + state.day);
+        $panel.find('#scene_panel_month_label').val(state.monthLabel);
+        $panel.find('#scene_panel_month_len').val(String(state.daysInMonth));
+        $panel.find('#scene_panel_inject').prop('checked', getSettings().inject);
+        $panel.find('#scene_panel_floating').prop('checked', getSettings().floating);
+        $panel.find('#scene_panel_role').val(getSettings().role);
+        renderCalendar('scene_panel_cal');
+    }
+    renderFloating();
+    renderCalendar('scene_panel_float_cal');
+}
+
+function readForm() {
+    const state = getState();
+    const read = (field) => {
+        const $el = $('#scene_panel_settings [data-scene-field="' + field + '"]');
+        return $el.length > 0 ? String($el.val() ?? '') : '';
+    };
+    const split = (raw, re) => raw.split(re).map((x) => x.trim()).filter(Boolean);
+    state.date = read('date');
+    state.place = read('place');
+    state.timeOfDay = read('timeOfDay');
+    state.weather = read('weather');
+    state.mood = read('mood');
+    state.present = split(read('present'), /[,\n]/);
+    state.open = split(read('open'), /\n/);
+    commit();
+    syncPrompt();
+    refresh();
+}
+
+function shiftDay(delta) {
+    const state = getState();
+    state.day = Math.max(1, state.day + delta);
+    commit();
+    syncPrompt();
+    refresh();
+}
+
+function setDayOfMonth(dom) {
+    const state = getState();
+    state.day = absoluteDay(state, monthIndex(state), dom);
+    commit();
+    syncPrompt();
+    refresh();
+}
+
+function shiftMonth(delta) {
+    const state = getState();
+    const target = Math.max(1, monthIndex(state) + delta);
+    state.day = absoluteDay(state, target, Math.min(dayOfMonth(state), state.daysInMonth));
+    commit();
+    syncPrompt();
+    refresh();
 }
 
 function parseTag(body) {
@@ -148,78 +290,6 @@ function parseTag(body) {
     return out;
 }
 
-function refresh() {
-    const state = getState();
-    const $panel = $('#scene_panel_settings');
-    if ($panel.length > 0) {
-        $panel.find('[data-scene-field]').each(function () {
-            const field = $(this).attr('data-scene-field');
-            const value = state[field];
-            if ($(this).is('textarea') || $(this).is('input')) {
-                const text = Array.isArray(value) ? value.join(field === 'open' ? '\n' : ', ') : String(value ?? '');
-                if ($(this).val() !== text) $(this).val(text);
-            } else {
-                $(this).text(Array.isArray(value) ? value.join(', ') : String(value ?? ''));
-            }
-        });
-        $panel.find('#scene_panel_day_label').text('день ' + state.day);
-        $panel.find('#scene_panel_inject').prop('checked', getSettings().inject);
-        $panel.find('#scene_panel_floating').prop('checked', getSettings().floating);
-        $panel.find('#scene_panel_role').val(getSettings().role);
-    }
-    renderFloating();
-}
-
-function renderFloating() {
-    const $float = $('#scene_panel_float');
-    if ($float.length === 0) return;
-    if (!getSettings().floating) {
-        $float.hide();
-        return;
-    }
-    $float.show();
-    const state = getState();
-    $float.find('#scene_panel_float_day').text('день ' + state.day);
-    $float.find('#scene_panel_float_place').text(state.place || '—');
-    $float.find('#scene_panel_float_when').text([state.timeOfDay, state.weather].filter(Boolean).join(' · '));
-    $float.find('#scene_panel_float_present').text(state.present.length > 0 ? state.present.join(' · ') : '—');
-    $float.find('#scene_panel_float_mood').text(state.mood || '');
-    const $open = $float.find('#scene_panel_float_open').empty();
-    if (state.open.length === 0) {
-        $open.append($('<div>').addClass('scene-panel-float-empty').text('нет открытых нитей'));
-    } else {
-        state.open.forEach((line) => $open.append($('<div>').addClass('scene-panel-float-thread').text('✦ ' + line)));
-    }
-}
-
-function readForm() {
-    const state = getState();
-    const read = (field) => {
-        const $el = $('#scene_panel_settings [data-scene-field="' + field + '"]');
-        return $el.length > 0 ? String($el.val() ?? '') : '';
-    };
-    const split = (raw, re) => raw.split(re).map((x) => x.trim()).filter(Boolean);
-    state.date = read('date');
-    state.place = read('place');
-    state.timeOfDay = read('timeOfDay');
-    state.weather = read('weather');
-    state.mood = read('mood');
-    state.present = split(read('present'), /[,\n]/);
-    state.open = split(read('open'), /\n/);
-    commit();
-    syncPrompt();
-    refresh();
-}
-
-function bump(branch, patch) {
-    const state = getState();
-    Object.assign(state, patch);
-    if (branch === 'day') state.day = Math.max(1, state.day + 1);
-    commit();
-    syncPrompt();
-    refresh();
-}
-
 function handleMessage(messageId) {
     try {
         const message = getContext().chat?.[messageId];
@@ -240,10 +310,99 @@ function handleMessage(messageId) {
     }
 }
 
+function applyFloatPos() {
+    const $f = $('#scene_panel_float');
+    if ($f.length === 0) return;
+    const pos = getSettings().floatPos;
+    if (pos && typeof pos.x === 'number' && typeof pos.y === 'number') {
+        $f.css({ left: pos.x + 'px', top: pos.y + 'px', right: 'auto', bottom: 'auto' });
+    }
+}
+
+function enableDrag() {
+    const el = document.getElementById('scene_panel_float');
+    if (!el) return;
+    const head = el.querySelector('.scene-panel-float-head');
+    if (!head) return;
+    let startX = 0;
+    let startY = 0;
+    let origX = 0;
+    let origY = 0;
+    let dragging = false;
+
+    head.addEventListener('pointerdown', (e) => {
+        if (e.target.closest('.scene-panel-float-btn')) return;
+        const rect = el.getBoundingClientRect();
+        startX = e.clientX;
+        startY = e.clientY;
+        origX = rect.left;
+        origY = rect.top;
+        dragging = true;
+        try {
+            head.setPointerCapture(e.pointerId);
+        } catch (err) {
+            /* pointer capture may be unavailable */
+        }
+    });
+
+    head.addEventListener('pointermove', (e) => {
+        if (!dragging) return;
+        const w = el.offsetWidth;
+        const x = Math.max(0, Math.min(window.innerWidth - w - 4, origX + (e.clientX - startX)));
+        const y = Math.max(0, Math.min(window.innerHeight - 44, origY + (e.clientY - startY)));
+        el.style.left = x + 'px';
+        el.style.top = y + 'px';
+        el.style.right = 'auto';
+        el.style.bottom = 'auto';
+        e.preventDefault();
+    });
+
+    const stop = (e) => {
+        if (!dragging) return;
+        dragging = false;
+        const rect = el.getBoundingClientRect();
+        getSettings().floatPos = { x: Math.round(rect.left), y: Math.round(rect.top) };
+        try {
+            saveSettings();
+        } catch (err) {
+            /* settings save is best-effort */
+        }
+        try {
+            head.releasePointerCapture(e.pointerId);
+        } catch (err) {
+            /* already released */
+        }
+    };
+
+    head.addEventListener('pointerup', stop);
+    head.addEventListener('pointercancel', stop);
+}
+
 function bindEvents() {
     const $panel = $('#scene_panel_settings');
     $panel.on('input change', '[data-scene-field]', () => readForm());
-    $panel.on('click', '#scene_panel_day_plus', () => bump('day'));
+    $panel.on('click', '#scene_panel_day_plus', () => shiftDay(1));
+    $panel.on('click', '#scene_panel_day_minus', () => shiftDay(-1));
+    $panel.on('input', '#scene_panel_month_label', (e) => {
+        getState().monthLabel = String(e.target.value || '');
+        commit();
+        syncPrompt();
+        renderCalendar('scene_panel_cal');
+        renderCalendar('scene_panel_float_cal');
+    });
+    $panel.on('change', '#scene_panel_month_len', (e) => {
+        const n = Math.max(MIN_MONTH, Math.min(MAX_MONTH, parseInt(String(e.target.value), 10) || 30));
+        getState().daysInMonth = n;
+        commit();
+        syncPrompt();
+        refresh();
+    });
+    $panel.on('click', '.scene-cal-day', (e) => {
+        const dom = parseInt(String($(e.currentTarget).attr('data-cal-day')), 10);
+        if (Number.isFinite(dom)) setDayOfMonth(dom);
+    });
+    $panel.on('click', '.scene-cal-prev', () => shiftMonth(-1));
+    $panel.on('click', '.scene-cal-next', () => shiftMonth(1));
     $panel.on('click', '#scene_panel_reset', () => {
         chat_metadata[MODULE] = emptyState();
         commit();
@@ -253,24 +412,50 @@ function bindEvents() {
     $panel.on('change', '#scene_panel_inject', (e) => {
         getSettings().inject = !!e.target.checked;
         syncPrompt();
+        try {
+            saveSettings();
+        } catch (err) {
+            /* ignore */
+        }
     });
     $panel.on('change', '#scene_panel_role', (e) => {
         getSettings().role = String(e.target.value || 'system');
         syncPrompt();
+        try {
+            saveSettings();
+        } catch (err) {
+            /* ignore */
+        }
     });
     $panel.on('change', '#scene_panel_floating', (e) => {
         getSettings().floating = !!e.target.checked;
+        try {
+            saveSettings();
+        } catch (err) {
+            /* ignore */
+        }
         renderFloating();
     });
 
     const $float = $('#scene_panel_float');
-    $float.on('click', '#scene_panel_float_day_plus', () => bump('day'));
-    $float.on('click', '#scene_panel_float_refresh', () => {
-        syncPrompt();
-        refresh();
+    $float.on('click', '#scene_panel_float_day_plus', () => shiftDay(1));
+    $float.on('click', '#scene_panel_float_day_minus', () => shiftDay(-1));
+    $float.on('click', '.scene-cal-day', (e) => {
+        const dom = parseInt(String($(e.currentTarget).attr('data-cal-day')), 10);
+        if (Number.isFinite(dom)) setDayOfMonth(dom);
+    });
+    $float.on('click', '.scene-cal-prev', () => shiftMonth(-1));
+    $float.on('click', '.scene-cal-next', () => shiftMonth(1));
+    $float.on('click', '#scene_panel_float_collapse', () => {
+        $float.toggleClass('is-collapsed');
     });
     $float.on('click', '#scene_panel_float_hide', () => {
         getSettings().floating = false;
+        try {
+            saveSettings();
+        } catch (err) {
+            /* ignore */
+        }
         renderFloating();
         refresh();
     });
@@ -284,9 +469,19 @@ jQuery(async () => {
         const floatHtml = await renderExtensionTemplateAsync(EXT_NAME, 'floating');
         $('body').append(floatHtml);
 
+        try {
+            const mod = await import('../../../../script.js');
+            if (typeof mod.saveSettingsDebounced === 'function') {
+                saveSettings = mod.saveSettingsDebounced;
+            }
+        } catch (e) {
+            console.warn('[scene-panel] settings save unavailable', e);
+        }
+
         getSettings();
         getState();
         bindEvents();
+        enableDrag();
         refresh();
         syncPrompt();
 
@@ -300,6 +495,16 @@ jQuery(async () => {
         eventSource.on(event_types.MESSAGE_SENT, () => refresh());
 
         window.addEventListener('focus', () => refresh());
+        window.addEventListener('resize', () => {
+            const pos = getSettings().floatPos;
+            if (pos) {
+                getSettings().floatPos = {
+                    x: Math.max(0, Math.min(window.innerWidth - 80, pos.x)),
+                    y: Math.max(0, Math.min(window.innerHeight - 44, pos.y)),
+                };
+                applyFloatPos();
+            }
+        });
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) refresh();
         });
