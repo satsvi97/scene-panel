@@ -658,3 +658,9 @@
     opacity: 0.7;
     line-height: 1.4;
 }
+
+.scene-panel-wrap .inline-drawer-header b,
+.scene-panel-modal-title {
+    letter-spacing: 0.08em;
+    text-shadow: 0 0 10px rgba(180, 170, 255, 0.45);
+}

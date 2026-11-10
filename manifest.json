@@ -1,12 +1,12 @@
 {
-  "display_name": "Scene Panel",
+  "display_name": "✦ Scene Panel ✦",
   "loading_order": 100,
   "requires": [],
   "optional": [],
   "js": "index.js",
   "css": "style.css",
   "author": "satsvi97",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "homePage": "https://github.com/satsvi97/scene-panel",
   "auto_update": false
 }
