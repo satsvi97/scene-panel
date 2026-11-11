@@ -822,6 +822,50 @@
     color: #ffffff;
 }
 
+/* переключатель языков в шапке */
+.scene-panel-langs {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    margin-left: 4px;
+}
+
+.scene-panel-lang {
+    cursor: pointer;
+    font-size: 0.68em;
+    letter-spacing: 0.05em;
+    padding: 1px 5px;
+    border-radius: 5px;
+    opacity: 0.45;
+    user-select: none;
+    transition: all 0.18s ease;
+}
+
+.scene-panel-lang:hover {
+    opacity: 0.9;
+    background: rgba(160, 150, 220, 0.2);
+}
+
+.scene-panel-lang.is-active {
+    opacity: 1;
+    font-weight: 700;
+    color: #d4d4ff;
+    background: rgba(184, 184, 255, 0.18);
+}
+
+.scene-panel-modal[data-sp-theme="light"] .scene-panel-lang {
+    color: #4a3f78;
+}
+
+.scene-panel-modal[data-sp-theme="light"] .scene-panel-lang:hover {
+    background: rgba(126, 108, 186, 0.18);
+}
+
+.scene-panel-modal[data-sp-theme="light"] .scene-panel-lang.is-active {
+    color: #3b2f66;
+    background: rgba(126, 108, 186, 0.24);
+}
+
 /* ---- страницы панели: сцена / статистика ---- */
 
 .scene-panel-modal-body > #scene_panel_slider {

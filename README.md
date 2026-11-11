@@ -4,7 +4,7 @@
 
 [🇷🇺 Русский](#-русский) · [🇺🇦 Українська](#-українська) · [🇸🇪 Svenska](#-svenska) · [🇬🇧 English](#-english)
 
-![version](https://img.shields.io/badge/version-0.9.1-b8b8ff?style=flat-square)
+![version](https://img.shields.io/badge/version-0.10.0-b8b8ff?style=flat-square)
 ![license](https://img.shields.io/badge/license-MIT-a99bf5?style=flat-square)
 ![platform](https://img.shields.io/badge/SillyTavern-extension-7c6ee0?style=flat-square)
 
@@ -35,6 +35,7 @@
 | 🩺 | **Диагностика** | Восстановление сцены из последних сообщений или из снимка. |
 | 📊 | **Статистика** | Отдельная страница: обновления, частые персонажи, места, время, погода. |
 | 🎨 | **Тема** | Авто / тёмная / светлая (сиреневая). |
+| 🌐 | **Язык панели** | Переключатель RU · UK · SV · EN в шапке, рядом со счётчиком дня. |
 | ✨ | **Эстетика** | Лунная пыль на фоне, плавающая карточка, дрейф по экрану. |
 
 ### 🌙 Установка
@@ -147,7 +148,7 @@ SillyTavern/public/scripts/extensions/third-party/scene-panel
 
 ### 🛠 Если что-то пошло не так
 
-- **Не видно обновления?** Проверьте версию — она написана **в правом нижнем углу панели** (`v0.9.1`). Затем `Ctrl+F5` и перезапуск таверны.
+- **Не видно обновления?** Проверьте версию — она написана **в правом нижнем углу панели** (`v0.10.0`). Затем `Ctrl+F5` и перезапуск таверны.
 - **Ошибка `Need to specify how to reconcile divergent branches` при обновлении.** История git разошлась: удалите расширение и установите заново по URL.
 - **Панель открылась «не той» разметкой.** Жёсткое обновление (`Ctrl+F5`); при повторе — переустановка.
 - **Погода не меняет фон.** Проверьте, что Weather Background включён и в его настройках не стоит «постоянный эффект none».
@@ -202,6 +203,7 @@ SillyTavern/public/scripts/extensions/third-party/scene-panel
 | 🩺 | **Діагностика** | Відновлення сцени з останніх повідомлень або зі знімка. |
 | 📊 | **Статистика** | Окрема сторінка: оновлення, часті персонажі, місця, час, погода. |
 | 🎨 | **Тема** | Авто / темна / світла (бузкова). |
+| 🌐 | **Мова панелі** | Перемикач RU · UK · SV · EN у шапці, поруч із лічильником дня. |
 | ✨ | **Естетика** | Місячний пил на тлі, плаваюча картка, дрейф по екрану. |
 
 ### 🌙 Встановлення
@@ -314,7 +316,7 @@ SillyTavern/public/scripts/extensions/third-party/scene-panel
 
 ### 🛠 Якщо щось пішло не так
 
-- **Не видно оновлення?** Перевірте версію — вона написана **в правому нижньому куті панелі** (`v0.9.1`). Потім `Ctrl+F5` і перезапуск таверни.
+- **Не видно оновлення?** Перевірте версію — вона написана **в правому нижньому куті панелі** (`v0.10.0`). Потім `Ctrl+F5` і перезапуск таверни.
 - **Помилка `Need to specify how to reconcile divergent branches` під час оновлення.** Історія git розійшлася: видаліть розширення й встановіть заново за URL.
 - **Панель відкрилася «не тією» розміткою.** Жорстке оновлення (`Ctrl+F5`); якщо повторюється — перевстановлення.
 - **Погода не змінює фон.** Перевірте, що Weather Background увімкнено і в його налаштуваннях не стоїть «постійний ефект none».
@@ -369,6 +371,7 @@ Huvudmagin: AI:n kan **själv** uppdatera scenen med en servicetagg i slutet av 
 | 🩺 | **Diagnostik** | Återställer scenen från senaste meddelanden eller från en ögonblicksbild. |
 | 📊 | **Statistik** | Egen sida: uppdateringar, vanligaste karaktärer, platser, tider, väder. |
 | 🎨 | **Tema** | Auto / mörkt / ljust (lila). |
+| 🌐 | **Panelspråk** | Växlare RU · UK · SV · EN i huvudet, bredvid dagsräknaren. |
 | ✨ | **Estetik** | Månstoft i bakgrunden, flytande kort, dragbar panel. |
 
 ### 🌙 Installation
@@ -481,7 +484,7 @@ Varje chatt har sin egen scen, historik och statistik.
 
 ### 🛠 Felsökning
 
-- **Ingen uppdatering syns?** Kontrollera versionen **i panelens nedre högra hörn** (`v0.9.1`), kör sedan `Ctrl+F5` och starta om tavernan.
+- **Ingen uppdatering syns?** Kontrollera versionen **i panelens nedre högra hörn** (`v0.10.0`), kör sedan `Ctrl+F5` och starta om tavernan.
 - **`Need to specify how to reconcile divergent branches` vid uppdatering.** Git-historiken har divergerat: ta bort tillägget och installera om via URL.
 - **Panelen öppnades med fel layout.** Hård uppdatering (`Ctrl+F5`); upprepas det — installera om.
 - **Vädret ändrar inte bakgrunden.** Kontrollera att Weather Background är aktiverat och att dess "permanent effekt" inte är satt till none.
@@ -536,6 +539,7 @@ The main magic: the AI can **update the scene itself** with a service tag at the
 | 🩺 | **Diagnostics** | Restores the scene from recent messages or from a snapshot. |
 | 📊 | **Statistics** | Separate page: updates, frequent characters, places, times, weather. |
 | 🎨 | **Theme** | Auto / dark / light (lilac). |
+| 🌐 | **Panel language** | RU · UK · SV · EN switcher in the header, next to the day counter. |
 | ✨ | **Aesthetics** | Moon dust background, floating card, draggable panel. |
 
 ### 🌙 Installation
@@ -648,7 +652,7 @@ Each chat has its own scene, history and statistics.
 
 ### 🛠 Troubleshooting
 
-- **No update visible?** Check the version shown **in the bottom-right corner of the panel** (`v0.9.1`), then `Ctrl+F5` and restart the tavern.
+- **No update visible?** Check the version shown **in the bottom-right corner of the panel** (`v0.10.0`), then `Ctrl+F5` and restart the tavern.
 - **`Need to specify how to reconcile divergent branches` on update.** The git history diverged: delete the extension and reinstall it via URL.
 - **Panel opened with the wrong layout.** Hard refresh (`Ctrl+F5`); if it repeats — reinstall.
 - **Weather doesn't change the background.** Make sure Weather Background is enabled and its "permanent effect" is not set to none.

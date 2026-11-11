@@ -53,105 +53,101 @@ const WEATHER_STATES = {
 let weatherRendererPromise = null;
 
 // Версия расширения (дублирует manifest.json для отображения в UI)
-const PANEL_VERSION = '0.9.1';
+const PANEL_VERSION = '0.10.0';
 
 // Встроенная разметка панели. Не зависит от внешнего panel.html и его кэша.
 const PANEL_HTML = `<div class="scene-panel-slider" id="scene_panel_slider">
   <div class="scene-panel-track" id="scene_panel_track">
     <div class="scene-panel-slide">
       <div class="scene-panel-settings" id="scene_panel_settings">
-    <div class="scene-panel-hint">
-        ИИ обновляет состояние тегом в конце сообщения:
-        <code>[[scene: день=+1; место=Дворец Ночи; время=утро; рядом=Ризанд; висит=разговор с Фейрой]]</code>
-        — тег из текста вырезается.
-    </div>
+    <div class="scene-panel-hint" data-i18n="tagHint"></div>
 
     <div class="scene-cal" id="scene_panel_cal">
         <div class="scene-cal-head">
-            <span class="scene-cal-btn scene-cal-prev" title="предыдущий месяц">‹</span>
+            <span class="scene-cal-btn scene-cal-prev" data-i18n-title="prevMonth">‹</span>
             <span class="scene-cal-title">месяц 1</span>
-            <span class="scene-cal-btn scene-cal-next" title="следующий месяц">›</span>
+            <span class="scene-cal-btn scene-cal-next" data-i18n-title="nextMonth">›</span>
         </div>
         <div class="scene-cal-grid"></div>
         <div class="scene-cal-actions">
-            <div class="menu_button" id="scene_panel_day_minus">− день</div>
-            <div class="menu_button" id="scene_panel_day_plus">+ день</div>
+            <div class="menu_button" id="scene_panel_day_minus" data-i18n="dayMinus">− день</div>
+            <div class="menu_button" id="scene_panel_day_plus" data-i18n="dayPlus">+ день</div>
         </div>
     </div>
 
     <div class="scene-panel-row">
         <label class="scene-panel-field">
-            <span>Название месяца</span>
-            <input type="text" id="scene_panel_month_label" placeholder="Сиреневый">
+            <span data-i18n="monthName">Название месяца</span>
+            <input type="text" id="scene_panel_month_label" data-i18n-ph="monthNamePh" placeholder="Сиреневый">
         </label>
         <label class="scene-panel-field scene-panel-narrow">
-            <span>Дней в месяце</span>
+            <span data-i18n="daysInMonth">Дней в месяце</span>
             <input type="number" id="scene_panel_month_len" min="5" max="60" step="1" value="30">
         </label>
     </div>
 
     <label class="scene-panel-field">
-        <span>📅 Дата словами</span>
-        <input type="text" data-scene-field="date" placeholder="12-е, месяц Сиреневой Луны">
+        <span data-i18n="date">📅 Дата словами</span>
+        <input type="text" data-scene-field="date" data-i18n-ph="datePh" placeholder="12-е, месяц Сиреневой Луны">
     </label>
     <label class="scene-panel-field">
-        <span>📍 Место</span>
-        <input type="text" data-scene-field="place" placeholder="Дворец Ночи, покои Ризанда">
+        <span data-i18n="place">📍 Место</span>
+        <input type="text" data-scene-field="place" data-i18n-ph="placePh" placeholder="Дворец Ночи, покои Ризанда">
     </label>
     <div class="scene-panel-row">
         <label class="scene-panel-field">
-            <span>🕐 Время</span>
-            <input type="text" data-scene-field="timeOfDay" placeholder="утро">
+            <span data-i18n="time">🕐 Время</span>
+            <input type="text" data-scene-field="timeOfDay" data-i18n-ph="timePh" placeholder="утро">
             <div class="scene-panel-chips" id="scene_panel_time_hints"></div>
         </label>
         <label class="scene-panel-field">
-            <span>🌦 Погода</span>
-            <input type="text" data-scene-field="weather" placeholder="ясно, прохладно">
+            <span data-i18n="weather">🌦 Погода</span>
+            <input type="text" data-scene-field="weather" data-i18n-ph="weatherPh" placeholder="ясно, прохладно">
         </label>
     </div>
     <label class="scene-panel-field">
-        <span>👥 Рядом (через запятую)</span>
-        <input type="text" data-scene-field="present" placeholder="Ризанд, Никс">
+        <span data-i18n="present">👥 Рядом (через запятую)</span>
+        <input type="text" data-scene-field="present" data-i18n-ph="presentPh" placeholder="Ризанд, Никс">
         <div class="scene-panel-chips" id="scene_panel_char_hints"></div>
     </label>
     <label class="scene-panel-field">
-        <span>⚡ Висит (каждое с новой строки)</span>
-        <textarea data-scene-field="open" rows="3" placeholder="Никс ждёт ответа&#10;Фейра назначила разговор"></textarea>
+        <span data-i18n="open">⚡ Висит (каждое с новой строки)</span>
+        <textarea data-scene-field="open" rows="3" data-i18n-ph="openPh" placeholder="Никс ждёт ответа&#10;Фейра назначила разговор"></textarea>
     </label>
     <label class="scene-panel-field">
-        <span>🌫 Тон</span>
-        <input type="text" data-scene-field="mood" placeholder="хрупкое перемирие">
+        <span data-i18n="mood">🌫 Тон</span>
+        <input type="text" data-scene-field="mood" data-i18n-ph="moodPh" placeholder="хрупкое перемирие">
     </label>
 
     <div class="scene-panel-field">
-        <span>⏱ Сессия: <b id="scene_panel_elapsed_display">день 1, 00:00</b></span>
+        <span><span data-i18n="session">⏱ Сессия:</span> <b id="scene_panel_elapsed_display">день 1, 00:00</b></span>
         <div class="scene-panel-actions">
-            <div class="menu_button" id="scene_panel_session_minus_hour" title="минус час">− час</div>
-            <div class="menu_button" id="scene_panel_session_plus_hour" title="плюс час">+ час</div>
-            <div class="menu_button" id="scene_panel_session_minus_day" title="минус день">− день</div>
-            <div class="menu_button" id="scene_panel_session_plus_day" title="плюс день">+ день</div>
+            <div class="menu_button" id="scene_panel_session_minus_hour" data-i18n="minusHour" data-i18n-title="minusHour">− час</div>
+            <div class="menu_button" id="scene_panel_session_plus_hour" data-i18n="plusHour" data-i18n-title="plusHour">+ час</div>
+            <div class="menu_button" id="scene_panel_session_minus_day" data-i18n="minusDay" data-i18n-title="minusDay">− день</div>
+            <div class="menu_button" id="scene_panel_session_plus_day" data-i18n="plusDay" data-i18n-title="plusDay">+ день</div>
         </div>
     </div>
 
     <label class="scene-panel-field">
-        <span>🏷 Доп. поля (ключ=значение, каждое с новой строки)</span>
-        <textarea id="scene_panel_custom" rows="2" placeholder="сюжет=погоня&#10;напряжение=высокое"></textarea>
+        <span data-i18n="custom">🏷 Доп. поля (ключ=значение, каждое с новой строки)</span>
+        <textarea id="scene_panel_custom" rows="2" data-i18n-ph="customPh" placeholder="сюжет=погоня&#10;напряжение=высокое"></textarea>
     </label>
 
     <div class="scene-panel-field">
-        <span>🩺 Диагностика</span>
+        <span data-i18n="diag">🩺 Диагностика</span>
         <div class="scene-panel-actions scene-panel-actions-row">
-            <div class="menu_button" id="scene_panel_diag">проверить и восстановить</div>
-            <div class="menu_button" id="scene_panel_reset">сбросить</div>
+            <div class="menu_button" id="scene_panel_diag" data-i18n="diagBtn">проверить и восстановить</div>
+            <div class="menu_button" id="scene_panel_reset" data-i18n="reset">сбросить</div>
         </div>
         <div id="scene_panel_diag_result" class="scene-panel-hint"></div>
     </div>
     <label class="checkbox_label scene-panel-check">
         <input type="checkbox" id="scene_panel_inject">
-        <span>вставлять сцену в промпт</span>
+        <span data-i18n="inject">вставлять сцену в промпт</span>
     </label>
     <label class="scene-panel-field scene-panel-inline">
-        <span>роль инжекта</span>
+        <span data-i18n="role">роль инжекта</span>
         <select id="scene_panel_role">
             <option value="system">system</option>
             <option value="user">user</option>
@@ -159,20 +155,20 @@ const PANEL_HTML = `<div class="scene-panel-slider" id="scene_panel_slider">
         </select>
     </label>
     <label class="scene-panel-field scene-panel-inline">
-        <span>🎨 тема панели</span>
+        <span data-i18n="theme">🎨 тема панели</span>
         <select id="scene_panel_theme">
-            <option value="auto">авто</option>
-            <option value="dark">тёмная</option>
-            <option value="light">светлая</option>
+            <option value="auto" data-i18n="themeAuto">авто</option>
+            <option value="dark" data-i18n="themeDark">тёмная</option>
+            <option value="light" data-i18n="themeLight">светлая</option>
         </select>
     </label>
     <label class="checkbox_label scene-panel-check">
         <input type="checkbox" id="scene_panel_floating">
-        <span>плавающая панель в чате</span>
+        <span data-i18n="floating">плавающая панель в чате</span>
     </label>
     <label class="checkbox_label scene-panel-check">
         <input type="checkbox" id="scene_panel_weather_integration">
-        <span>🌦 фон погоды (Weather Background)</span>
+        <span data-i18n="wb">🌦 фон погоды (Weather Background)</span>
     </label>
 
     <div class="scene-panel-credit">by ✦ Selena's Tavern ✦</div>
@@ -182,11 +178,11 @@ const PANEL_HTML = `<div class="scene-panel-slider" id="scene_panel_slider">
 
     <div class="scene-panel-slide scene-panel-slide-stats">
       <div class="scene-panel-settings">
-        <div class="scene-panel-hint">📊 Статистика этого чата. Свайп вправо или кнопка «✕» — вернуться к сцене.</div>
+        <div class="scene-panel-hint" data-i18n="statsHint"></div>
         <div id="scene_panel_stats_body" class="scene-panel-stats"></div>
         <div class="scene-panel-actions scene-panel-actions-row">
-          <div class="menu_button" id="scene_panel_stats_refresh">обновить</div>
-          <div class="menu_button" id="scene_panel_stats_reset">очистить</div>
+          <div class="menu_button" id="scene_panel_stats_refresh" data-i18n="statsRefresh">обновить</div>
+          <div class="menu_button" id="scene_panel_stats_reset" data-i18n="statsClear">очистить</div>
         </div>
         <div class="scene-panel-credit">by ✦ Selena's Tavern ✦</div>
         <div class="scene-panel-version">v${PANEL_VERSION}</div>
@@ -195,10 +191,205 @@ const PANEL_HTML = `<div class="scene-panel-slider" id="scene_panel_slider">
   </div>
 
   <div class="scene-panel-pager" id="scene_panel_pager">
-    <span class="scene-panel-dot is-active" data-slide="0" title="сцена"></span>
-    <span class="scene-panel-dot" data-slide="1" title="статистика"></span>
+    <span class="scene-panel-dot is-active" data-slide="0" data-i18n-title="slideScene"></span>
+    <span class="scene-panel-dot" data-slide="1" data-i18n-title="slideStats"></span>
   </div>
 </div>`;
+
+// ---- Локализация интерфейса панели ----
+
+const LANGS = ['ru', 'en', 'uk', 'sv'];
+
+const I18N = {
+    ru: {
+        tagHint: 'ИИ обновляет состояние тегом в конце сообщения: <code>[[scene: день=+1; место=Дворец Ночи; время=утро; рядом=Ризанд; висит=разговор с Фейрой]]</code> — тег из текста вырезается.',
+        month: 'месяц', prevMonth: 'предыдущий месяц', nextMonth: 'следующий месяц',
+        dayMinus: '− день', dayPlus: '+ день',
+        monthName: 'Название месяца', monthNamePh: 'Сиреневый', daysInMonth: 'Дней в месяце',
+        date: '📅 Дата словами', datePh: '12-е, месяц Сиреневой Луны',
+        place: '📍 Место', placePh: 'Дворец Ночи, покои Ризанда',
+        time: '🕐 Время', timePh: 'утро',
+        weather: '🌦 Погода', weatherPh: 'ясно, прохладно',
+        present: '👥 Рядом (через запятую)', presentPh: 'Ризанд, Никс',
+        open: '⚡ Висит (каждое с новой строки)', openPh: 'Никс ждёт ответа\nФейра назначила разговор',
+        mood: '🌫 Тон', moodPh: 'хрупкое перемирие',
+        session: '⏱ Сессия:',
+        minusHour: '− час', plusHour: '+ час', minusDay: '− день', plusDay: '+ день',
+        custom: '🏷 Доп. поля (ключ=значение, каждое с новой строки)', customPh: 'сюжет=погоня\nнапряжение=высокое',
+        diag: '🩺 Диагностика', diagBtn: 'проверить и восстановить', reset: 'сбросить',
+        inject: 'вставлять сцену в промпт', role: 'роль инжекта',
+        theme: '🎨 тема панели', themeAuto: 'авто', themeDark: 'тёмная', themeLight: 'светлая',
+        floating: 'плавающая панель в чате', wb: '🌦 фон погоды (Weather Background)',
+        statsHint: '📊 Статистика этого чата. Свайп вправо или кнопка «✕» — вернуться к сцене.',
+        statsRefresh: 'обновить', statsClear: 'очистить',
+        day: 'день', noThreads: 'нет открытых нитей', addToPresent: 'добавить в «рядом»',
+        statsEmpty: 'пока пусто — появится по мере обновления сцены',
+        statsUpdates: 'обновлений', statsMaxDay: 'макс. день', statsChars: 'чаще рядом',
+        statsPlaces: 'чаще место', statsTimes: 'время', statsWeather: 'погода',
+        diagTags: 'Тегов в последних {n} сообщениях: {count}.', diagSnaps: 'Снимков в истории: {count}.',
+        diagFromTag: '✅ Восстановлено из тега сообщения #{n}.',
+        diagFromSnap: '✅ Восстановлено из снимка ({time}).',
+        diagNothing: '⚠️ Нечего восстанавливать: тегов и снимков нет.',
+        slideScene: 'сцена', slideStats: 'статистика',
+        enabled: 'расширение включено', openPanel: 'открыть панель сцены',
+        drawerHint: 'Календарь, место, состав сцены и открытые нити. ИИ обновляет их тегом <code>[[scene: …]]</code> в конце ответа.<br>Свайп влево — статистика. Alt+Shift+S — открыть панель.',
+        timePresets: ['рассвет', 'утро', 'день', 'вечер', 'закат', 'ночь'],
+    },
+    en: {
+        tagHint: 'The AI updates the scene with a tag at the end of a message: <code>[[scene: day=+1; place=Night Palace; time=morning; present=Rhysand; open=talk with Feyre]]</code> — the tag is stripped from the text.',
+        month: 'month', prevMonth: 'previous month', nextMonth: 'next month',
+        dayMinus: '− day', dayPlus: '+ day',
+        monthName: 'Month name', monthNamePh: 'Lilac', daysInMonth: 'Days in month',
+        date: '📅 Date in words', datePh: '12th, month of the Lilac Moon',
+        place: '📍 Place', placePh: "Night Palace, Rhysand's chambers",
+        time: '🕐 Time', timePh: 'morning',
+        weather: '🌦 Weather', weatherPh: 'clear, cool',
+        present: '👥 Present (comma separated)', presentPh: 'Rhysand, Nyx',
+        open: '⚡ Open threads (one per line)', openPh: 'Nyx awaits an answer\nFeyre called a meeting',
+        mood: '🌫 Mood', moodPh: 'fragile truce',
+        session: '⏱ Session:',
+        minusHour: '− hour', plusHour: '+ hour', minusDay: '− day', plusDay: '+ day',
+        custom: '🏷 Custom fields (key=value, one per line)', customPh: 'plot=chase\ntension=high',
+        diag: '🩺 Diagnostics', diagBtn: 'check & restore', reset: 'reset',
+        inject: 'inject scene into prompt', role: 'injection role',
+        theme: '🎨 panel theme', themeAuto: 'auto', themeDark: 'dark', themeLight: 'light',
+        floating: 'floating panel in chat', wb: '🌦 weather background (Weather Background)',
+        statsHint: '📊 Statistics for this chat. Swipe right or press «✕» to return to the scene.',
+        statsRefresh: 'refresh', statsClear: 'clear',
+        day: 'day', noThreads: 'no open threads', addToPresent: 'add to present',
+        statsEmpty: 'empty so far — will fill as the scene updates',
+        statsUpdates: 'updates', statsMaxDay: 'max day', statsChars: 'most present',
+        statsPlaces: 'top place', statsTimes: 'time', statsWeather: 'weather',
+        diagTags: 'Tags in the last {n} messages: {count}.', diagSnaps: 'Snapshots in history: {count}.',
+        diagFromTag: '✅ Restored from tag in message #{n}.',
+        diagFromSnap: '✅ Restored from snapshot ({time}).',
+        diagNothing: '⚠️ Nothing to restore: no tags and no snapshots.',
+        slideScene: 'scene', slideStats: 'statistics',
+        enabled: 'extension enabled', openPanel: 'open scene panel',
+        drawerHint: 'Calendar, place, scene cast and open threads. The AI updates them with a <code>[[scene: …]]</code> tag at the end of a reply.<br>Swipe left for statistics. Alt+Shift+S opens the panel.',
+        timePresets: ['dawn', 'morning', 'day', 'evening', 'sunset', 'night'],
+    },
+    uk: {
+        tagHint: 'ШІ оновлює стан тегом наприкінці повідомлення: <code>[[scene: день=+1; місце=Палац Ночі; час=ранок; поруч=Ризанд; висить=розмова з Фейрою]]</code> — тег вирізається з тексту.',
+        month: 'місяць', prevMonth: 'попередній місяць', nextMonth: 'наступний місяць',
+        dayMinus: '− день', dayPlus: '+ день',
+        monthName: 'Назва місяця', monthNamePh: 'Бузковий', daysInMonth: 'Днів у місяці',
+        date: '📅 Дата словами', datePh: '12-е, місяць Бузкового Місяця',
+        place: '📍 Місце', placePh: 'Палац Ночі, покої Ризанду',
+        time: '🕐 Час', timePh: 'ранок',
+        weather: '🌦 Погода', weatherPh: 'ясно, прохолодно',
+        present: '👥 Поруч (через кому)', presentPh: 'Ризанд, Нікс',
+        open: '⚡ Висить (кожне з нового рядка)', openPh: 'Нікс чекає відповіді\nФейра призначила розмову',
+        mood: '🌫 Тон', moodPh: 'крихке перемир\'я',
+        session: '⏱ Сесія:',
+        minusHour: '− година', plusHour: '+ година', minusDay: '− день', plusDay: '+ день',
+        custom: '🏷 Дод. поля (ключ=значення, кожне з нового рядка)', customPh: 'сюжет=погоня\nнапруга=висока',
+        diag: '🩺 Діагностика', diagBtn: 'перевірити й відновити', reset: 'скинути',
+        inject: 'вставляти сцену в промпт', role: 'роль інжекту',
+        theme: '🎨 тема панелі', themeAuto: 'авто', themeDark: 'темна', themeLight: 'світла',
+        floating: 'плаваюча панель у чаті', wb: '🌦 фон погоди (Weather Background)',
+        statsHint: '📊 Статистика цього чату. Свайп вправо або кнопка «✕» — повернутися до сцени.',
+        statsRefresh: 'оновити', statsClear: 'очистити',
+        day: 'день', noThreads: 'немає відкритих ниток', addToPresent: 'додати до «поруч»',
+        statsEmpty: 'поки порожньо — з\'явиться в міру оновлення сцени',
+        statsUpdates: 'оновлень', statsMaxDay: 'макс. день', statsChars: 'найчастіше поруч',
+        statsPlaces: 'часте місце', statsTimes: 'час', statsWeather: 'погода',
+        diagTags: 'Тегів в останніх {n} повідомленнях: {count}.', diagSnaps: 'Знімків в історії: {count}.',
+        diagFromTag: '✅ Відновлено з тегу повідомлення #{n}.',
+        diagFromSnap: '✅ Відновлено зі знімка ({time}).',
+        diagNothing: '⚠️ Немає чого відновлювати: тегів і знімків немає.',
+        slideScene: 'сцена', slideStats: 'статистика',
+        enabled: 'розширення увімкнено', openPanel: 'відкрити панель сцени',
+        drawerHint: 'Календар, місце, склад сцени та відкриті нитки. ШІ оновлює їх тегом <code>[[scene: …]]</code> наприкінці відповіді.<br>Свайп вліво — статистика. Alt+Shift+S — відкрити панель.',
+        timePresets: ['світанок', 'ранок', 'день', 'вечір', 'захід', 'ніч'],
+    },
+    sv: {
+        tagHint: 'AI:n uppdaterar scenen med en tagg i slutet av ett meddelande: <code>[[scene: dag=+1; plats=Nattpalatset; tid=morgon; närvarande=Rhysand; trådar=samtal med Feyre]]</code> — taggen klipps bort från texten.',
+        month: 'månad', prevMonth: 'föregående månad', nextMonth: 'nästa månad',
+        dayMinus: '− dag', dayPlus: '+ dag',
+        monthName: 'Månadsnamn', monthNamePh: 'Lila', daysInMonth: 'Dagar per månad',
+        date: '📅 Datum i ord', datePh: '12:e, Liljemånens månad',
+        place: '📍 Plats', placePh: 'Nattpalatset, Rhysands gemak',
+        time: '🕐 Tid', timePh: 'morgon',
+        weather: '🌦 Väder', weatherPh: 'klart, svalt',
+        present: '👥 Närvarande (kommaseparerat)', presentPh: 'Rhysand, Nyx',
+        open: '⚡ Öppna trådar (en per rad)', openPh: 'Nyx väntar på svar\nFeyre bokade ett samtal',
+        mood: '🌫 Ton', moodPh: 'skör vapenvila',
+        session: '⏱ Session:',
+        minusHour: '− timme', plusHour: '+ timme', minusDay: '− dag', plusDay: '+ dag',
+        custom: '🏷 Egna fält (nyckel=värde, en per rad)', customPh: 'handling=jakt\nspänning=hög',
+        diag: '🩺 Diagnostik', diagBtn: 'kontrollera & återställ', reset: 'nollställ',
+        inject: 'injicera scenen i prompten', role: 'injektionsroll',
+        theme: '🎨 panelens tema', themeAuto: 'auto', themeDark: 'mörkt', themeLight: 'ljust',
+        floating: 'flytande panel i chatten', wb: '🌦 vederbakgrund (Weather Background)',
+        statsHint: '📊 Statistik för denna chatt. Svep åt höger eller tryck «✕» för att gå tillbaka.',
+        statsRefresh: 'uppdatera', statsClear: 'rensa',
+        day: 'dag', noThreads: 'inga öppna trådar', addToPresent: 'lägg till i närvarande',
+        statsEmpty: 'tomt än så länge — fylls på när scenen uppdateras',
+        statsUpdates: 'uppdateringar', statsMaxDay: 'högsta dag', statsChars: 'vanligast närvarande',
+        statsPlaces: 'vanligaste plats', statsTimes: 'tid', statsWeather: 'väder',
+        diagTags: 'Taggar i de senaste {n} meddelandena: {count}.', diagSnaps: 'Ögonblicksbilder i historiken: {count}.',
+        diagFromTag: '✅ Återställt från tagg i meddelande #{n}.',
+        diagFromSnap: '✅ Återställt från ögonblicksbild ({time}).',
+        diagNothing: '⚠️ Inget att återställa: inga taggar och inga ögonblicksbilder.',
+        slideScene: 'scen', slideStats: 'statistik',
+        enabled: 'tillägget aktiverat', openPanel: 'öppna scenpanelen',
+        drawerHint: 'Kalender, plats, scenens sällskap och öppna trådar. AI:n uppdaterar dem med en <code>[[scene: …]]</code>-tagg i slutet av svaret.<br>Svep vänster för statistik. Alt+Shift+S öppnar panelen.',
+        timePresets: ['gryning', 'morgon', 'dag', 'kväll', 'solnedgång', 'natt'],
+    },
+};
+
+function getLang() {
+    const lang = getSettings().lang;
+    return LANGS.includes(lang) ? lang : 'ru';
+}
+
+function t(key) {
+    const dict = I18N[getLang()] || I18N.ru;
+    if (dict[key] !== undefined) return dict[key];
+    if (I18N.ru[key] !== undefined) return I18N.ru[key];
+    return key;
+}
+
+function tf(key, vars) {
+    let out = String(t(key));
+    Object.entries(vars || {}).forEach(([k, v]) => {
+        out = out.split('{' + k + '}').join(String(v));
+    });
+    return out;
+}
+
+// Применяет текущий язык ко всем элементам с data-i18n
+function applyLanguage() {
+    document.querySelectorAll('[data-i18n]').forEach((el) => {
+        const val = t(el.getAttribute('data-i18n'));
+        if (typeof val === 'string') el.innerHTML = val;
+    });
+    document.querySelectorAll('[data-i18n-ph]').forEach((el) => {
+        const val = t(el.getAttribute('data-i18n-ph'));
+        if (typeof val === 'string') el.setAttribute('placeholder', val);
+    });
+    document.querySelectorAll('[data-i18n-title]').forEach((el) => {
+        const val = t(el.getAttribute('data-i18n-title'));
+        if (typeof val === 'string') el.setAttribute('title', val);
+    });
+
+    const lang = getLang();
+    document.querySelectorAll('#scene_panel_langs .scene-panel-lang').forEach((el) => {
+        el.classList.toggle('is-active', el.getAttribute('data-lang') === lang);
+    });
+
+    const state = getState();
+    $('#scene_panel_day_label').text(t('day') + ' ' + state.day);
+    $('#scene_panel_day_compact').text(t('day') + ' ' + state.day);
+
+    renderCalendar('scene_panel_cal');
+    renderCalendar('scene_panel_float_cal');
+    renderTimeHints();
+    renderCharHints();
+    renderStats();
+    renderFloating();
+}
 
 let saveSettings = () => {};
 
@@ -223,7 +414,7 @@ function emptyState() {
 
 function getSettings() {
     if (!extension_settings[MODULE] || typeof extension_settings[MODULE] !== 'object') {
-        extension_settings[MODULE] = { enabled: true, inject: true, role: 'system', floating: true, floatPos: null, weatherIntegration: true, theme: 'auto' };
+        extension_settings[MODULE] = { enabled: true, inject: true, role: 'system', floating: true, floatPos: null, weatherIntegration: true, theme: 'auto', lang: 'ru' };
     }
     const s = extension_settings[MODULE];
     if (typeof s.enabled !== 'boolean') s.enabled = true;
@@ -232,6 +423,7 @@ function getSettings() {
     if (typeof s.role !== 'string') s.role = 'system';
     if (typeof s.weatherIntegration !== 'boolean') s.weatherIntegration = true;
     if (typeof s.theme !== 'string') s.theme = 'auto';
+    if (!LANGS.includes(s.lang)) s.lang = 'ru';
     return s;
 }
 
@@ -281,7 +473,7 @@ function absoluteDay(state, month, dom) {
 function monthTitle(state) {
     const idx = monthIndex(state);
     const label = state.monthLabel.trim();
-    return label ? label + ' · ' + idx : 'месяц ' + idx;
+    return label ? label + ' · ' + idx : t('month') + ' ' + idx;
 }
 
 // Часы:минуты с ведущими нулями
@@ -291,7 +483,7 @@ function pad2(n) {
 
 // Счётчик времени сессии: день + часы:минуты
 function elapsedTimeString(state) {
-    return 'день ' + state.sessionDay + ', ' + pad2(state.sessionHour) + ':' + pad2(state.sessionMinute);
+    return t('day') + ' ' + state.sessionDay + ', ' + pad2(state.sessionHour) + ':' + pad2(state.sessionMinute);
 }
 
 // Сдвиг часов сессии (с переносом через сутки, не ниже day 1 / 00:00)
@@ -399,14 +591,14 @@ function renderFloating() {
     $float.show();
     applyFloatPos();
     const state = getState();
-    $float.find('#scene_panel_float_day').text('день ' + state.day);
+    $float.find('#scene_panel_float_day').text(t('day') + ' ' + state.day);
     $float.find('#scene_panel_float_place').text(state.place || '—');
     $float.find('#scene_panel_float_when').text([state.timeOfDay, state.weather].filter(Boolean).join(' · '));
     $float.find('#scene_panel_float_present').text(state.present.length > 0 ? state.present.join(' · ') : '—');
     $float.find('#scene_panel_float_mood').text(state.mood || '');
     const $open = $float.find('#scene_panel_float_open').empty();
     if (state.open.length === 0) {
-        $open.append($('<div>').addClass('scene-panel-float-empty').text('нет открытых нитей'));
+        $open.append($('<div>').addClass('scene-panel-float-empty').text(t('noThreads')));
     } else {
         state.open.forEach((line) => $open.append($('<div>').addClass('scene-panel-float-thread').text('✦ ' + line)));
     }
@@ -424,8 +616,8 @@ function refresh() {
                 if ($(this).val() !== text) $(this).val(text);
             }
         });
-        $('#scene_panel_day_label').text('день ' + state.day);
-        $('#scene_panel_day_compact').text('день ' + state.day);
+        $('#scene_panel_day_label').text(t('day') + ' ' + state.day);
+        $('#scene_panel_day_compact').text(t('day') + ' ' + state.day);
         $('#scene_panel_enabled').prop('checked', isEnabled());
         $('#scene_panel_topbtn').toggle(isEnabled());
         $panel.find('#scene_panel_month_label').val(state.monthLabel);
@@ -625,7 +817,7 @@ function renderCharHints() {
         $box.append(
             $('<span>')
                 .addClass('scene-panel-chip')
-                .attr('title', 'добавить в «рядом»')
+                .attr('title', t('addToPresent'))
                 .text('＋ ' + name)
                 .on('click', () => {
                     const st = getState();
@@ -646,18 +838,18 @@ function renderCharHints() {
 function renderTimeHints() {
     const $box = $('#scene_panel_time_hints');
     if ($box.length === 0) return;
-    const presets = ['рассвет', 'утро', 'день', 'вечер', 'закат', 'ночь'];
+    const presets = Array.isArray(t('timePresets')) ? t('timePresets') : I18N.ru.timePresets;
     const current = (getState().timeOfDay || '').trim().toLowerCase();
     $box.empty();
-    presets.forEach((t) => {
+    presets.forEach((label) => {
         $box.append(
             $('<span>')
                 .addClass('scene-panel-chip')
-                .toggleClass('is-active', current === t)
-                .text(t)
+                .toggleClass('is-active', current === label)
+                .text(label)
                 .on('click', () => {
                     const st = getState();
-                    st.timeOfDay = current === t ? '' : t;
+                    st.timeOfDay = current === label ? '' : label;
                     commit();
                     recordSnapshot();
                     syncPrompt();
@@ -746,27 +938,28 @@ function renderStats() {
     const st = getStats();
     $body.empty();
     if (!st.updates) {
-        $body.append($('<div>').addClass('scene-panel-hint').text('пока пусто — появится по мере обновления сцены'));
+        $body.append($('<div>').addClass('scene-panel-hint').text(t('statsEmpty')));
         return;
     }
+    const fmt = (list) => list.map(([k, v]) => k + ' (' + v + ')').join(', ');
     const rows = [];
-    rows.push('обновлений: ' + st.updates + ' · макс. день: ' + st.maxDay);
+    rows.push(t('statsUpdates') + ': ' + st.updates + ' · ' + t('statsMaxDay') + ': ' + st.maxDay);
     const chars = topList(st.chars);
-    if (chars.length) rows.push('чаще рядом: ' + chars.map(([k, v]) => k + ' (' + v + ')').join(', '));
+    if (chars.length) rows.push(t('statsChars') + ': ' + fmt(chars));
     const places = topList(st.places);
-    if (places.length) rows.push('чаще место: ' + places.map(([k, v]) => k + ' (' + v + ')').join(', '));
+    if (places.length) rows.push(t('statsPlaces') + ': ' + fmt(places));
     const times = topList(st.times);
-    if (times.length) rows.push('время: ' + times.map(([k, v]) => k + ' (' + v + ')').join(', '));
+    if (times.length) rows.push(t('statsTimes') + ': ' + fmt(times));
     const weather = topList(st.weather);
-    if (weather.length) rows.push('погода: ' + weather.map(([k, v]) => k + ' (' + v + ')').join(', '));
+    if (weather.length) rows.push(t('statsWeather') + ': ' + fmt(weather));
     rows.forEach((r) => $body.append($('<div>').text(r)));
 }
 
 // ---- Тема панели ----
 
 function resolveTheme() {
-    const t = getSettings().theme;
-    if (t === 'dark' || t === 'light') return t;
+    const mode = getSettings().theme;
+    if (mode === 'dark' || mode === 'light') return mode;
     try {
         const bg = getComputedStyle(document.body).backgroundColor || '';
         const nums = bg.match(/\d+/g);
@@ -938,8 +1131,8 @@ function runDiagnostics() {
     const tags = collectTagsFromRecent(DIAG_SCAN);
     const hist = Array.isArray(chat_metadata[HISTORY_KEY]) ? chat_metadata[HISTORY_KEY] : [];
     const lines = [];
-    lines.push('Тегов в последних ' + DIAG_SCAN + ' сообщениях: ' + tags.length + '.');
-    lines.push('Снимков в истории: ' + hist.length + '.');
+    lines.push(tf('diagTags', { n: DIAG_SCAN, count: tags.length }));
+    lines.push(tf('diagSnaps', { count: hist.length }));
 
     if (tags.length > 0) {
         const latest = tags[0];
@@ -953,13 +1146,13 @@ function runDiagnostics() {
         syncPrompt();
         refresh();
         applyWeatherEffect();
-        lines.push('✅ Восстановлено из тега сообщения #' + (latest.index + 1) + '.');
+        lines.push(tf('diagFromTag', { n: latest.index + 1 }));
     } else if (hist.length > 0) {
         const snap = hist[hist.length - 1];
         restoreStateFrom(snap.state);
-        lines.push('✅ Восстановлено из снимка (' + new Date(snap.ts).toLocaleTimeString() + ').');
+        lines.push(tf('diagFromSnap', { time: new Date(snap.ts).toLocaleTimeString() }));
     } else {
-        lines.push('⚠️ Нечего восстанавливать: тегов и снимков нет.');
+        lines.push(t('diagNothing'));
     }
 
     $out.text(lines.join(' '));
@@ -1080,6 +1273,12 @@ function mountModal(panelHtml) {
         '      <span class="scene-panel-modal-title">✦ SCENE PANEL ✦</span>',
         '      <span class="scene-panel-modal-page" id="scene_panel_page_btn" title="сцена / статистика">📊</span>',
         '      <span class="scene-panel-modal-day" id="scene_panel_day_label">день 1</span>',
+        '      <span class="scene-panel-langs" id="scene_panel_langs">',
+        '        <span class="scene-panel-lang" data-lang="ru" title="Русский">RU</span>',
+        '        <span class="scene-panel-lang" data-lang="en" title="English">EN</span>',
+        '        <span class="scene-panel-lang" data-lang="uk" title="Українська">UK</span>',
+        '        <span class="scene-panel-lang" data-lang="sv" title="Svenska">SV</span>',
+        '      </span>',
         '      <span class="scene-panel-modal-x" id="scene_panel_modal_close" title="закрыть">×</span>',
         '    </div>',
         '    <div class="scene-panel-modal-body" id="scene_panel_modal_body"></div>',
@@ -1260,6 +1459,20 @@ function bindEvents() {
     });
     $('#scene_panel_page_btn').on('click', () => setPanelPage(panelPage === 0 ? 1 : 0));
 
+    // Переключатель языков панели
+    $('#scene_panel_langs').on('click', '.scene-panel-lang', function () {
+        const lang = String($(this).attr('data-lang') || 'ru');
+        if (!LANGS.includes(lang)) return;
+        getSettings().lang = lang;
+        try {
+            saveSettings();
+        } catch (err) {
+            /* ignore */
+        }
+        applyLanguage();
+        refresh();
+    });
+
     // Кнопки счётчика времени сессии
     $panel.on('click', '#scene_panel_session_minus_hour', () => shiftSessionHour(-1));
     $panel.on('click', '#scene_panel_session_plus_hour', () => shiftSessionHour(1));
@@ -1322,6 +1535,7 @@ jQuery(async () => {
         bindEvents();
         enableDrag();
         initPanelSlider();
+        applyLanguage();
         refresh();
         syncPrompt();
         applyWeatherEffect();
