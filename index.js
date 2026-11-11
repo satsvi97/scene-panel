@@ -51,7 +51,7 @@ const WEATHER_STATES = {
 let weatherRendererPromise = null;
 
 // Версия расширения (дублирует manifest.json для отображения в UI)
-const PANEL_VERSION = '0.8.1';
+const PANEL_VERSION = '0.9.0';
 
 // Встроенная разметка панели. Не зависит от внешнего panel.html и его кэша.
 const PANEL_HTML = `<div class="scene-panel-slider" id="scene_panel_slider">
@@ -100,6 +100,7 @@ const PANEL_HTML = `<div class="scene-panel-slider" id="scene_panel_slider">
         <label class="scene-panel-field">
             <span>🕐 Время</span>
             <input type="text" data-scene-field="timeOfDay" placeholder="утро">
+            <div class="scene-panel-chips" id="scene_panel_time_hints"></div>
         </label>
         <label class="scene-panel-field">
             <span>🌦 Погода</span>
@@ -109,6 +110,7 @@ const PANEL_HTML = `<div class="scene-panel-slider" id="scene_panel_slider">
     <label class="scene-panel-field">
         <span>👥 Рядом (через запятую)</span>
         <input type="text" data-scene-field="present" placeholder="Ризанд, Никс">
+        <div class="scene-panel-chips" id="scene_panel_char_hints"></div>
     </label>
     <label class="scene-panel-field">
         <span>⚡ Висит (каждое с новой строки)</span>
@@ -436,6 +438,8 @@ function refresh() {
         $panel.find('#scene_panel_custom').val(customText);
         renderCalendar('scene_panel_cal');
         renderStats();
+        renderCharHints();
+        renderTimeHints();
     }
     applyTheme();
     renderFloating();
@@ -576,6 +580,89 @@ function handleMessage(messageId) {
     } catch (e) {
         console.error('[scene-panel] tag handling failed', e);
     }
+}
+
+// ---- Подсказки из контекста чата ----
+
+// Имена персонажей, известные таверне (плюс имя пользователя-персоны)
+function collectCharacterNames() {
+    const ctx = getContext();
+    const names = [];
+    try {
+        (ctx.characters || []).forEach((c) => {
+            if (c && typeof c.name === 'string') names.push(c.name);
+        });
+    } catch (e) {
+        /* ignore */
+    }
+    if (typeof ctx.name1 === 'string') names.push(ctx.name1);
+    if (typeof ctx.name2 === 'string') names.push(ctx.name2);
+    const seen = new Set();
+    return names
+        .map((n) => n.trim())
+        .filter((n) => n && !seen.has(n.toLowerCase()) && seen.add(n.toLowerCase()));
+}
+
+// Чипы «＋ Имя» для поля «Рядом» — только те, кто реально упомянут недавно
+function renderCharHints() {
+    const $box = $('#scene_panel_char_hints');
+    if ($box.length === 0) return;
+    const state = getState();
+    const chat = getContext().chat ?? [];
+    const recent = chat
+        .slice(Math.max(0, chat.length - 10))
+        .map((m) => (typeof m?.mes === 'string' ? m.mes : ''))
+        .join('\n');
+    const present = new Set((state.present || []).map((p) => p.toLowerCase()));
+    const candidates = collectCharacterNames()
+        .filter((n) => !present.has(n.toLowerCase()) && recent.includes(n))
+        .slice(0, 8);
+
+    $box.empty();
+    candidates.forEach((name) => {
+        $box.append(
+            $('<span>')
+                .addClass('scene-panel-chip')
+                .attr('title', 'добавить в «рядом»')
+                .text('＋ ' + name)
+                .on('click', () => {
+                    const st = getState();
+                    if (!st.present.some((p) => p.toLowerCase() === name.toLowerCase())) {
+                        st.present.push(name);
+                        commit();
+                        recordSnapshot();
+                        syncPrompt();
+                        refresh();
+                    }
+                }),
+        );
+    });
+    $box.toggle(candidates.length > 0);
+}
+
+// Быстрые чипы времени суток
+function renderTimeHints() {
+    const $box = $('#scene_panel_time_hints');
+    if ($box.length === 0) return;
+    const presets = ['рассвет', 'утро', 'день', 'вечер', 'закат', 'ночь'];
+    const current = (getState().timeOfDay || '').trim().toLowerCase();
+    $box.empty();
+    presets.forEach((t) => {
+        $box.append(
+            $('<span>')
+                .addClass('scene-panel-chip')
+                .toggleClass('is-active', current === t)
+                .text(t)
+                .on('click', () => {
+                    const st = getState();
+                    st.timeOfDay = current === t ? '' : t;
+                    commit();
+                    recordSnapshot();
+                    syncPrompt();
+                    refresh();
+                }),
+        );
+    });
 }
 
 // ---- История снимков сцены и диагностика ----
@@ -1049,6 +1136,14 @@ function bindEvents() {
     });
     $(document).on('keydown.scenePanel', (e) => {
         if (e.key === 'Escape') closeModal();
+    });
+    // Alt+Shift+S — открыть панель сцены
+    $(document).on('keydown.scenePanelHotkey', (e) => {
+        const isS = e.key === 's' || e.key === 'S' || e.code === 'KeyS';
+        if (e.altKey && e.shiftKey && isS) {
+            e.preventDefault();
+            openModal();
+        }
     });
     $('#scene_panel_enabled').on('change', (e) => {
         getSettings().enabled = !!e.target.checked;

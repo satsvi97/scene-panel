@@ -770,6 +770,58 @@
     user-select: none;
 }
 
+/* ---- подсказки-чипы (персонажи, время суток) ---- */
+
+.scene-panel-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 5px;
+}
+
+.scene-panel-chip {
+    cursor: pointer;
+    font-size: 0.78em;
+    line-height: 1.6;
+    padding: 1px 9px;
+    border-radius: 999px;
+    border: 1px solid rgba(160, 150, 220, 0.45);
+    background: rgba(180, 170, 255, 0.12);
+    color: #c9c4ee;
+    user-select: none;
+    transition: all 0.18s ease;
+}
+
+.scene-panel-chip:hover {
+    background: rgba(184, 184, 255, 0.3);
+    border-color: rgba(184, 184, 255, 0.7);
+    color: #e8e6f6;
+}
+
+.scene-panel-chip.is-active {
+    background: #b8b8ff;
+    border-color: #d4d4ff;
+    color: #14101f;
+    font-weight: 600;
+}
+
+.scene-panel-modal[data-sp-theme="light"] .scene-panel-chip {
+    background: rgba(126, 108, 186, 0.12);
+    border-color: rgba(126, 108, 186, 0.45);
+    color: #4a3f78;
+}
+
+.scene-panel-modal[data-sp-theme="light"] .scene-panel-chip:hover {
+    background: rgba(126, 108, 186, 0.24);
+    color: #33295a;
+}
+
+.scene-panel-modal[data-sp-theme="light"] .scene-panel-chip.is-active {
+    background: #7c6ee0;
+    border-color: #a99bf5;
+    color: #ffffff;
+}
+
 /* ---- страницы панели: сцена / статистика ---- */
 
 .scene-panel-modal-body > #scene_panel_slider {
