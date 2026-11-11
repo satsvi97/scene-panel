@@ -6,7 +6,7 @@
   "js": "index.js",
   "css": "style.css",
   "author": "satsvi97",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "homePage": "https://github.com/satsvi97/scene-panel",
   "auto_update": false
 }

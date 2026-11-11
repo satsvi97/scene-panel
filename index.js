@@ -53,7 +53,7 @@ const WEATHER_STATES = {
 let weatherRendererPromise = null;
 
 // Версия расширения (дублирует manifest.json для отображения в UI)
-const PANEL_VERSION = '0.10.0';
+const PANEL_VERSION = '0.10.1';
 
 // Встроенная разметка панели. Не зависит от внешнего panel.html и его кэша.
 const PANEL_HTML = `<div class="scene-panel-slider" id="scene_panel_slider">
@@ -359,19 +359,25 @@ function tf(key, vars) {
     return out;
 }
 
-// Применяет текущий язык ко всем элементам с data-i18n
+// Применяет текущий язык ТОЛЬКО к своим элементам (не трогает другие расширения)
 function applyLanguage() {
-    document.querySelectorAll('[data-i18n]').forEach((el) => {
-        const val = t(el.getAttribute('data-i18n'));
-        if (typeof val === 'string') el.innerHTML = val;
-    });
-    document.querySelectorAll('[data-i18n-ph]').forEach((el) => {
-        const val = t(el.getAttribute('data-i18n-ph'));
-        if (typeof val === 'string') el.setAttribute('placeholder', val);
-    });
-    document.querySelectorAll('[data-i18n-title]').forEach((el) => {
-        const val = t(el.getAttribute('data-i18n-title'));
-        if (typeof val === 'string') el.setAttribute('title', val);
+    const dict = I18N[getLang()] || I18N.ru;
+    const has = (key) => Object.prototype.hasOwnProperty.call(dict, key);
+    const roots = document.querySelectorAll('#scene_panel_modal, #scene_panel_settings_compact, #scene_panel_float');
+
+    roots.forEach((root) => {
+        root.querySelectorAll('[data-i18n]').forEach((el) => {
+            const key = el.getAttribute('data-i18n');
+            if (has(key)) el.innerHTML = dict[key];
+        });
+        root.querySelectorAll('[data-i18n-ph]').forEach((el) => {
+            const key = el.getAttribute('data-i18n-ph');
+            if (has(key)) el.setAttribute('placeholder', dict[key]);
+        });
+        root.querySelectorAll('[data-i18n-title]').forEach((el) => {
+            const key = el.getAttribute('data-i18n-title');
+            if (has(key)) el.setAttribute('title', dict[key]);
+        });
     });
 
     const lang = getLang();
