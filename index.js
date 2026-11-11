@@ -51,10 +51,13 @@ const WEATHER_STATES = {
 let weatherRendererPromise = null;
 
 // Версия расширения (дублирует manifest.json для отображения в UI)
-const PANEL_VERSION = '0.7.1';
+const PANEL_VERSION = '0.8.0';
 
 // Встроенная разметка панели. Не зависит от внешнего panel.html и его кэша.
-const PANEL_HTML = `<div class="scene-panel-settings" id="scene_panel_settings">
+const PANEL_HTML = `<div class="scene-panel-slider" id="scene_panel_slider">
+  <div class="scene-panel-track" id="scene_panel_track">
+    <div class="scene-panel-slide">
+      <div class="scene-panel-settings" id="scene_panel_settings">
     <div class="scene-panel-hint">
         ИИ обновляет состояние тегом в конце сообщения:
         <code>[[scene: день=+1; место=Дворец Ночи; время=утро; рядом=Ризанд; висит=разговор с Фейрой]]</code>
@@ -151,6 +154,14 @@ const PANEL_HTML = `<div class="scene-panel-settings" id="scene_panel_settings">
             <option value="assistant">assistant</option>
         </select>
     </label>
+    <label class="scene-panel-field scene-panel-inline">
+        <span>🎨 тема панели</span>
+        <select id="scene_panel_theme">
+            <option value="auto">авто</option>
+            <option value="dark">тёмная</option>
+            <option value="light">светлая</option>
+        </select>
+    </label>
     <label class="checkbox_label scene-panel-check">
         <input type="checkbox" id="scene_panel_floating">
         <span>плавающая панель в чате</span>
@@ -162,6 +173,27 @@ const PANEL_HTML = `<div class="scene-panel-settings" id="scene_panel_settings">
 
     <div class="scene-panel-credit">by ✦ Selena's Tavern ✦</div>
     <div class="scene-panel-version">v${PANEL_VERSION}</div>
+      </div>
+    </div>
+
+    <div class="scene-panel-slide scene-panel-slide-stats">
+      <div class="scene-panel-settings">
+        <div class="scene-panel-hint">📊 Статистика этого чата. Свайп вправо или кнопка «✕» — вернуться к сцене.</div>
+        <div id="scene_panel_stats_body" class="scene-panel-stats"></div>
+        <div class="scene-panel-actions scene-panel-actions-row">
+          <div class="menu_button" id="scene_panel_stats_refresh">обновить</div>
+          <div class="menu_button" id="scene_panel_stats_reset">очистить</div>
+        </div>
+        <div class="scene-panel-credit">by ✦ Selena's Tavern ✦</div>
+        <div class="scene-panel-version">v${PANEL_VERSION}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scene-panel-pager" id="scene_panel_pager">
+    <span class="scene-panel-dot is-active" data-slide="0" title="сцена"></span>
+    <span class="scene-panel-dot" data-slide="1" title="статистика"></span>
+  </div>
 </div>`;
 
 let saveSettings = () => {};
@@ -187,7 +219,7 @@ function emptyState() {
 
 function getSettings() {
     if (!extension_settings[MODULE] || typeof extension_settings[MODULE] !== 'object') {
-        extension_settings[MODULE] = { enabled: true, inject: true, role: 'system', floating: true, floatPos: null, weatherIntegration: true };
+        extension_settings[MODULE] = { enabled: true, inject: true, role: 'system', floating: true, floatPos: null, weatherIntegration: true, theme: 'auto' };
     }
     const s = extension_settings[MODULE];
     if (typeof s.enabled !== 'boolean') s.enabled = true;
@@ -195,6 +227,7 @@ function getSettings() {
     if (typeof s.floating !== 'boolean') s.floating = true;
     if (typeof s.role !== 'string') s.role = 'system';
     if (typeof s.weatherIntegration !== 'boolean') s.weatherIntegration = true;
+    if (typeof s.theme !== 'string') s.theme = 'auto';
     return s;
 }
 
@@ -397,11 +430,14 @@ function refresh() {
         $panel.find('#scene_panel_floating').prop('checked', getSettings().floating);
         $panel.find('#scene_panel_role').val(getSettings().role);
         $panel.find('#scene_panel_weather_integration').prop('checked', getSettings().weatherIntegration);
+        $panel.find('#scene_panel_theme').val(getSettings().theme);
         $panel.find('#scene_panel_elapsed_display').text(elapsedTimeString(state));
         const customText = Object.entries(state.custom || {}).map(([k, v]) => k + '=' + v).join('\n');
         $panel.find('#scene_panel_custom').val(customText);
         renderCalendar('scene_panel_cal');
+        renderStats();
     }
+    applyTheme();
     renderFloating();
     renderCalendar('scene_panel_float_cal');
 }
@@ -435,6 +471,7 @@ function readForm() {
     }
     commit();
     recordSnapshot();
+    scheduleStats();
     syncPrompt();
     refresh();
     applyWeatherEffect();
@@ -532,6 +569,7 @@ function handleMessage(messageId) {
         updateMessageBlock(messageId, message, { rerenderMessage: true });
         commit();
         recordSnapshot();
+        trackStats(getState());
         syncPrompt();
         refresh();
         applyWeatherEffect();
@@ -545,6 +583,198 @@ function handleMessage(messageId) {
 const HISTORY_KEY = MODULE + '_history';
 const MAX_SNAPSHOTS = 20;
 const DIAG_SCAN = 12;
+const STATS_KEY = MODULE + '_stats';
+
+// ---- Статистика сессии ----
+
+function getStats() {
+    if (!chat_metadata[STATS_KEY] || typeof chat_metadata[STATS_KEY] !== 'object') {
+        chat_metadata[STATS_KEY] = {
+            updates: 0,
+            firstTs: 0,
+            lastTs: 0,
+            maxDay: 1,
+            places: {},
+            times: {},
+            weather: {},
+            chars: {},
+        };
+    }
+    const st = chat_metadata[STATS_KEY];
+    for (const k of ['places', 'times', 'weather', 'chars']) {
+        if (!st[k] || typeof st[k] !== 'object' || Array.isArray(st[k])) st[k] = {};
+    }
+    if (!Number.isFinite(Number(st.updates))) st.updates = 0;
+    if (!Number.isFinite(Number(st.maxDay))) st.maxDay = 1;
+    return st;
+}
+
+function bump(obj, key) {
+    if (typeof key !== 'string') return;
+    const k = key.trim();
+    if (!k) return;
+    obj[k] = (obj[k] || 0) + 1;
+}
+
+// Считает статистику по текущему состоянию сцены
+function trackStats(state) {
+    try {
+        const st = getStats();
+        st.updates += 1;
+        st.lastTs = Date.now();
+        if (!st.firstTs) st.firstTs = st.lastTs;
+        st.maxDay = Math.max(st.maxDay || 1, Number(state.day) || 1);
+        bump(st.places, state.place);
+        bump(st.times, state.timeOfDay);
+        bump(st.weather, state.weather);
+        (state.present || []).forEach((c) => bump(st.chars, c));
+    } catch (e) {
+        console.warn('[scene-panel] stats failed', e);
+    }
+}
+
+// Дебаунс: при наборе текста считаем один раз
+let statsTimer = null;
+function scheduleStats() {
+    if (statsTimer) clearTimeout(statsTimer);
+    statsTimer = setTimeout(() => {
+        statsTimer = null;
+        trackStats(getState());
+        renderStats();
+    }, 900);
+}
+
+function topList(obj, limit = 3) {
+    return Object.entries(obj || {})
+        .filter(([, v]) => Number(v) > 0)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, limit);
+}
+
+function renderStats() {
+    const $body = $('#scene_panel_stats_body');
+    if ($body.length === 0) return;
+    const st = getStats();
+    $body.empty();
+    if (!st.updates) {
+        $body.append($('<div>').addClass('scene-panel-hint').text('пока пусто — появится по мере обновления сцены'));
+        return;
+    }
+    const rows = [];
+    rows.push('обновлений: ' + st.updates + ' · макс. день: ' + st.maxDay);
+    const chars = topList(st.chars);
+    if (chars.length) rows.push('чаще рядом: ' + chars.map(([k, v]) => k + ' (' + v + ')').join(', '));
+    const places = topList(st.places);
+    if (places.length) rows.push('чаще место: ' + places.map(([k, v]) => k + ' (' + v + ')').join(', '));
+    const times = topList(st.times);
+    if (times.length) rows.push('время: ' + times.map(([k, v]) => k + ' (' + v + ')').join(', '));
+    const weather = topList(st.weather);
+    if (weather.length) rows.push('погода: ' + weather.map(([k, v]) => k + ' (' + v + ')').join(', '));
+    rows.forEach((r) => $body.append($('<div>').text(r)));
+}
+
+// ---- Тема панели ----
+
+function resolveTheme() {
+    const t = getSettings().theme;
+    if (t === 'dark' || t === 'light') return t;
+    try {
+        const bg = getComputedStyle(document.body).backgroundColor || '';
+        const nums = bg.match(/\d+/g);
+        if (nums && nums.length >= 3) {
+            const [r, g, b] = nums.slice(0, 3).map(Number);
+            const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+            return lum > 140 ? 'light' : 'dark';
+        }
+    } catch (e) {
+        /* fallback below */
+    }
+    return 'dark';
+}
+
+function applyTheme() {
+    const theme = resolveTheme();
+    $('#scene_panel_modal').attr('data-sp-theme', theme);
+    $('#scene_panel_float').attr('data-sp-theme', theme);
+}
+
+// ---- Страницы панели: сцена ⇄ статистика ----
+
+let panelPage = 0;
+
+function setPanelPage(idx) {
+    panelPage = Math.max(0, Math.min(1, idx));
+    const $track = $('#scene_panel_track');
+    if ($track.length === 0) return;
+    $track.toggleClass('is-stats', panelPage === 1);
+    $('#scene_panel_pager .scene-panel-dot').each(function () {
+        $(this).toggleClass('is-active', Number($(this).attr('data-slide')) === panelPage);
+    });
+    if (panelPage === 1) renderStats();
+}
+
+function initPanelSlider() {
+    const el = document.getElementById('scene_panel_slider');
+    const track = document.getElementById('scene_panel_track');
+    if (!el || !track) return;
+
+    let startX = 0;
+    let startY = 0;
+    let dx = 0;
+    let active = false;
+    let locked = null;
+
+    el.addEventListener('pointerdown', (e) => {
+        if (typeof e.button === 'number' && e.button !== 0) return;
+        if (e.target.closest('input, textarea, select, button, .menu_button, .scene-cal-day, .scene-cal-btn, .scene-panel-dot')) return;
+        startX = e.clientX;
+        startY = e.clientY;
+        dx = 0;
+        locked = null;
+        active = true;
+        track.classList.add('is-dragging');
+        try {
+            el.setPointerCapture(e.pointerId);
+        } catch (err) {
+            /* pointer capture may be unavailable */
+        }
+    });
+
+    el.addEventListener('pointermove', (e) => {
+        if (!active) return;
+        const mx = e.clientX - startX;
+        const my = e.clientY - startY;
+        if (locked === null) {
+            if (Math.abs(mx) > 8 || Math.abs(my) > 8) {
+                locked = Math.abs(mx) > Math.abs(my) ? 'x' : 'y';
+            }
+        }
+        if (locked !== 'x') return;
+        dx = mx;
+        const base = panelPage === 1 ? -50 : 0;
+        const shift = (dx / Math.max(1, el.clientWidth)) * 50;
+        const pos = Math.max(-50, Math.min(0, base + shift));
+        track.style.transform = 'translateX(' + pos + '%)';
+        e.preventDefault();
+    });
+
+    const end = () => {
+        if (!active) return;
+        active = false;
+        track.classList.remove('is-dragging');
+        track.style.transform = '';
+        if (locked === 'x') {
+            if (dx < -40) setPanelPage(1);
+            else if (dx > 40) setPanelPage(0);
+            else setPanelPage(panelPage);
+        }
+        dx = 0;
+        locked = null;
+    };
+
+    el.addEventListener('pointerup', end);
+    el.addEventListener('pointercancel', end);
+}
 
 function snapshotKey(state) {
     return JSON.stringify({
@@ -759,6 +989,7 @@ function mountModal(panelHtml) {
         '  <div class="scene-panel-modal-card" role="dialog" aria-label="Scene Panel">',
         '    <div class="scene-panel-modal-head">',
         '      <span class="scene-panel-modal-title">✦ SCENE PANEL ✦</span>',
+        '      <span class="scene-panel-modal-page" id="scene_panel_page_btn" title="сцена / статистика">📊</span>',
         '      <span class="scene-panel-modal-day" id="scene_panel_day_label">день 1</span>',
         '      <span class="scene-panel-modal-x" id="scene_panel_modal_close" title="закрыть">×</span>',
         '    </div>',
@@ -798,6 +1029,7 @@ function openModal() {
     const $modal = $('#scene_panel_modal');
     if ($modal.length === 0) return;
     $modal.addClass('is-open').attr('aria-hidden', 'false');
+    setPanelPage(0);
     refresh();
 }
 
@@ -805,6 +1037,7 @@ function closeModal() {
     const $modal = $('#scene_panel_modal');
     if ($modal.length === 0) return;
     $modal.removeClass('is-open').attr('aria-hidden', 'true');
+    setPanelPage(0);
 }
 
 function bindEvents() {
@@ -907,6 +1140,29 @@ function bindEvents() {
         refresh();
     });
 
+    $panel.on('change', '#scene_panel_theme', (e) => {
+        getSettings().theme = String(e.target.value || 'auto');
+        try {
+            saveSettings();
+        } catch (err) {
+            /* ignore */
+        }
+        applyTheme();
+    });
+
+    $('#scene_panel_modal').on('click', '#scene_panel_stats_refresh', () => renderStats());
+    $('#scene_panel_modal').on('click', '#scene_panel_stats_reset', () => {
+        chat_metadata[STATS_KEY] = null;
+        renderStats();
+        commit();
+    });
+
+    // Переключение страниц: точки-индикаторы и кнопка в шапке
+    $('#scene_panel_pager').on('click', '.scene-panel-dot', function () {
+        setPanelPage(Number($(this).attr('data-slide')) || 0);
+    });
+    $('#scene_panel_page_btn').on('click', () => setPanelPage(panelPage === 0 ? 1 : 0));
+
     // Кнопки счётчика времени сессии
     $panel.on('click', '#scene_panel_session_minus_hour', () => shiftSessionHour(-1));
     $panel.on('click', '#scene_panel_session_plus_hour', () => shiftSessionHour(1));
@@ -968,6 +1224,7 @@ jQuery(async () => {
         getState();
         bindEvents();
         enableDrag();
+        initPanelSlider();
         refresh();
         syncPrompt();
         applyWeatherEffect();
