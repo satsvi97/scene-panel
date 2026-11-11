@@ -53,101 +53,101 @@ const WEATHER_STATES = {
 let weatherRendererPromise = null;
 
 // Версия расширения (дублирует manifest.json для отображения в UI)
-const PANEL_VERSION = '0.10.1';
+const PANEL_VERSION = '0.10.2';
 
 // Встроенная разметка панели. Не зависит от внешнего panel.html и его кэша.
 const PANEL_HTML = `<div class="scene-panel-slider" id="scene_panel_slider">
   <div class="scene-panel-track" id="scene_panel_track">
     <div class="scene-panel-slide">
       <div class="scene-panel-settings" id="scene_panel_settings">
-    <div class="scene-panel-hint" data-i18n="tagHint"></div>
+    <div class="scene-panel-hint" data-sp-i18n="tagHint"></div>
 
     <div class="scene-cal" id="scene_panel_cal">
         <div class="scene-cal-head">
-            <span class="scene-cal-btn scene-cal-prev" data-i18n-title="prevMonth">‹</span>
+            <span class="scene-cal-btn scene-cal-prev" data-sp-title="prevMonth">‹</span>
             <span class="scene-cal-title">месяц 1</span>
-            <span class="scene-cal-btn scene-cal-next" data-i18n-title="nextMonth">›</span>
+            <span class="scene-cal-btn scene-cal-next" data-sp-title="nextMonth">›</span>
         </div>
         <div class="scene-cal-grid"></div>
         <div class="scene-cal-actions">
-            <div class="menu_button" id="scene_panel_day_minus" data-i18n="dayMinus">− день</div>
-            <div class="menu_button" id="scene_panel_day_plus" data-i18n="dayPlus">+ день</div>
+            <div class="menu_button" id="scene_panel_day_minus" data-sp-i18n="dayMinus">− день</div>
+            <div class="menu_button" id="scene_panel_day_plus" data-sp-i18n="dayPlus">+ день</div>
         </div>
     </div>
 
     <div class="scene-panel-row">
         <label class="scene-panel-field">
-            <span data-i18n="monthName">Название месяца</span>
-            <input type="text" id="scene_panel_month_label" data-i18n-ph="monthNamePh" placeholder="Сиреневый">
+            <span data-sp-i18n="monthName">Название месяца</span>
+            <input type="text" id="scene_panel_month_label" data-sp-ph="monthNamePh" placeholder="Сиреневый">
         </label>
         <label class="scene-panel-field scene-panel-narrow">
-            <span data-i18n="daysInMonth">Дней в месяце</span>
+            <span data-sp-i18n="daysInMonth">Дней в месяце</span>
             <input type="number" id="scene_panel_month_len" min="5" max="60" step="1" value="30">
         </label>
     </div>
 
     <label class="scene-panel-field">
-        <span data-i18n="date">📅 Дата словами</span>
-        <input type="text" data-scene-field="date" data-i18n-ph="datePh" placeholder="12-е, месяц Сиреневой Луны">
+        <span data-sp-i18n="date">📅 Дата словами</span>
+        <input type="text" data-scene-field="date" data-sp-ph="datePh" placeholder="12-е, месяц Сиреневой Луны">
     </label>
     <label class="scene-panel-field">
-        <span data-i18n="place">📍 Место</span>
-        <input type="text" data-scene-field="place" data-i18n-ph="placePh" placeholder="Дворец Ночи, покои Ризанда">
+        <span data-sp-i18n="place">📍 Место</span>
+        <input type="text" data-scene-field="place" data-sp-ph="placePh" placeholder="Дворец Ночи, покои Ризанда">
     </label>
     <div class="scene-panel-row">
         <label class="scene-panel-field">
-            <span data-i18n="time">🕐 Время</span>
-            <input type="text" data-scene-field="timeOfDay" data-i18n-ph="timePh" placeholder="утро">
+            <span data-sp-i18n="time">🕐 Время</span>
+            <input type="text" data-scene-field="timeOfDay" data-sp-ph="timePh" placeholder="утро">
             <div class="scene-panel-chips" id="scene_panel_time_hints"></div>
         </label>
         <label class="scene-panel-field">
-            <span data-i18n="weather">🌦 Погода</span>
-            <input type="text" data-scene-field="weather" data-i18n-ph="weatherPh" placeholder="ясно, прохладно">
+            <span data-sp-i18n="weather">🌦 Погода</span>
+            <input type="text" data-scene-field="weather" data-sp-ph="weatherPh" placeholder="ясно, прохладно">
         </label>
     </div>
     <label class="scene-panel-field">
-        <span data-i18n="present">👥 Рядом (через запятую)</span>
-        <input type="text" data-scene-field="present" data-i18n-ph="presentPh" placeholder="Ризанд, Никс">
+        <span data-sp-i18n="present">👥 Рядом (через запятую)</span>
+        <input type="text" data-scene-field="present" data-sp-ph="presentPh" placeholder="Ризанд, Никс">
         <div class="scene-panel-chips" id="scene_panel_char_hints"></div>
     </label>
     <label class="scene-panel-field">
-        <span data-i18n="open">⚡ Висит (каждое с новой строки)</span>
-        <textarea data-scene-field="open" rows="3" data-i18n-ph="openPh" placeholder="Никс ждёт ответа&#10;Фейра назначила разговор"></textarea>
+        <span data-sp-i18n="open">⚡ Висит (каждое с новой строки)</span>
+        <textarea data-scene-field="open" rows="3" data-sp-ph="openPh" placeholder="Никс ждёт ответа&#10;Фейра назначила разговор"></textarea>
     </label>
     <label class="scene-panel-field">
-        <span data-i18n="mood">🌫 Тон</span>
-        <input type="text" data-scene-field="mood" data-i18n-ph="moodPh" placeholder="хрупкое перемирие">
+        <span data-sp-i18n="mood">🌫 Тон</span>
+        <input type="text" data-scene-field="mood" data-sp-ph="moodPh" placeholder="хрупкое перемирие">
     </label>
 
     <div class="scene-panel-field">
-        <span><span data-i18n="session">⏱ Сессия:</span> <b id="scene_panel_elapsed_display">день 1, 00:00</b></span>
+        <span><span data-sp-i18n="session">⏱ Сессия:</span> <b id="scene_panel_elapsed_display">день 1, 00:00</b></span>
         <div class="scene-panel-actions">
-            <div class="menu_button" id="scene_panel_session_minus_hour" data-i18n="minusHour" data-i18n-title="minusHour">− час</div>
-            <div class="menu_button" id="scene_panel_session_plus_hour" data-i18n="plusHour" data-i18n-title="plusHour">+ час</div>
-            <div class="menu_button" id="scene_panel_session_minus_day" data-i18n="minusDay" data-i18n-title="minusDay">− день</div>
-            <div class="menu_button" id="scene_panel_session_plus_day" data-i18n="plusDay" data-i18n-title="plusDay">+ день</div>
+            <div class="menu_button" id="scene_panel_session_minus_hour" data-sp-i18n="minusHour" data-sp-title="minusHour">− час</div>
+            <div class="menu_button" id="scene_panel_session_plus_hour" data-sp-i18n="plusHour" data-sp-title="plusHour">+ час</div>
+            <div class="menu_button" id="scene_panel_session_minus_day" data-sp-i18n="minusDay" data-sp-title="minusDay">− день</div>
+            <div class="menu_button" id="scene_panel_session_plus_day" data-sp-i18n="plusDay" data-sp-title="plusDay">+ день</div>
         </div>
     </div>
 
     <label class="scene-panel-field">
-        <span data-i18n="custom">🏷 Доп. поля (ключ=значение, каждое с новой строки)</span>
-        <textarea id="scene_panel_custom" rows="2" data-i18n-ph="customPh" placeholder="сюжет=погоня&#10;напряжение=высокое"></textarea>
+        <span data-sp-i18n="custom">🏷 Доп. поля (ключ=значение, каждое с новой строки)</span>
+        <textarea id="scene_panel_custom" rows="2" data-sp-ph="customPh" placeholder="сюжет=погоня&#10;напряжение=высокое"></textarea>
     </label>
 
     <div class="scene-panel-field">
-        <span data-i18n="diag">🩺 Диагностика</span>
+        <span data-sp-i18n="diag">🩺 Диагностика</span>
         <div class="scene-panel-actions scene-panel-actions-row">
-            <div class="menu_button" id="scene_panel_diag" data-i18n="diagBtn">проверить и восстановить</div>
-            <div class="menu_button" id="scene_panel_reset" data-i18n="reset">сбросить</div>
+            <div class="menu_button" id="scene_panel_diag" data-sp-i18n="diagBtn">проверить и восстановить</div>
+            <div class="menu_button" id="scene_panel_reset" data-sp-i18n="reset">сбросить</div>
         </div>
         <div id="scene_panel_diag_result" class="scene-panel-hint"></div>
     </div>
     <label class="checkbox_label scene-panel-check">
         <input type="checkbox" id="scene_panel_inject">
-        <span data-i18n="inject">вставлять сцену в промпт</span>
+        <span data-sp-i18n="inject">вставлять сцену в промпт</span>
     </label>
     <label class="scene-panel-field scene-panel-inline">
-        <span data-i18n="role">роль инжекта</span>
+        <span data-sp-i18n="role">роль инжекта</span>
         <select id="scene_panel_role">
             <option value="system">system</option>
             <option value="user">user</option>
@@ -155,20 +155,20 @@ const PANEL_HTML = `<div class="scene-panel-slider" id="scene_panel_slider">
         </select>
     </label>
     <label class="scene-panel-field scene-panel-inline">
-        <span data-i18n="theme">🎨 тема панели</span>
+        <span data-sp-i18n="theme">🎨 тема панели</span>
         <select id="scene_panel_theme">
-            <option value="auto" data-i18n="themeAuto">авто</option>
-            <option value="dark" data-i18n="themeDark">тёмная</option>
-            <option value="light" data-i18n="themeLight">светлая</option>
+            <option value="auto" data-sp-i18n="themeAuto">авто</option>
+            <option value="dark" data-sp-i18n="themeDark">тёмная</option>
+            <option value="light" data-sp-i18n="themeLight">светлая</option>
         </select>
     </label>
     <label class="checkbox_label scene-panel-check">
         <input type="checkbox" id="scene_panel_floating">
-        <span data-i18n="floating">плавающая панель в чате</span>
+        <span data-sp-i18n="floating">плавающая панель в чате</span>
     </label>
     <label class="checkbox_label scene-panel-check">
         <input type="checkbox" id="scene_panel_weather_integration">
-        <span data-i18n="wb">🌦 фон погоды (Weather Background)</span>
+        <span data-sp-i18n="wb">🌦 фон погоды (Weather Background)</span>
     </label>
 
     <div class="scene-panel-credit">by ✦ Selena's Tavern ✦</div>
@@ -178,11 +178,11 @@ const PANEL_HTML = `<div class="scene-panel-slider" id="scene_panel_slider">
 
     <div class="scene-panel-slide scene-panel-slide-stats">
       <div class="scene-panel-settings">
-        <div class="scene-panel-hint" data-i18n="statsHint"></div>
+        <div class="scene-panel-hint" data-sp-i18n="statsHint"></div>
         <div id="scene_panel_stats_body" class="scene-panel-stats"></div>
         <div class="scene-panel-actions scene-panel-actions-row">
-          <div class="menu_button" id="scene_panel_stats_refresh" data-i18n="statsRefresh">обновить</div>
-          <div class="menu_button" id="scene_panel_stats_reset" data-i18n="statsClear">очистить</div>
+          <div class="menu_button" id="scene_panel_stats_refresh" data-sp-i18n="statsRefresh">обновить</div>
+          <div class="menu_button" id="scene_panel_stats_reset" data-sp-i18n="statsClear">очистить</div>
         </div>
         <div class="scene-panel-credit">by ✦ Selena's Tavern ✦</div>
         <div class="scene-panel-version">v${PANEL_VERSION}</div>
@@ -191,8 +191,8 @@ const PANEL_HTML = `<div class="scene-panel-slider" id="scene_panel_slider">
   </div>
 
   <div class="scene-panel-pager" id="scene_panel_pager">
-    <span class="scene-panel-dot is-active" data-slide="0" data-i18n-title="slideScene"></span>
-    <span class="scene-panel-dot" data-slide="1" data-i18n-title="slideStats"></span>
+    <span class="scene-panel-dot is-active" data-slide="0" data-sp-title="slideScene"></span>
+    <span class="scene-panel-dot" data-slide="1" data-sp-title="slideStats"></span>
   </div>
 </div>`;
 
@@ -359,23 +359,31 @@ function tf(key, vars) {
     return out;
 }
 
-// Применяет текущий язык ТОЛЬКО к своим элементам (не трогает другие расширения)
+// Безопасная обёртка: ошибка локализации не должна ломать таверну
 function applyLanguage() {
+    try {
+        applyLanguageInner();
+    } catch (e) {
+        console.warn('[scene-panel] language apply skipped', e);
+    }
+}
+
+function applyLanguageInner() {
     const dict = I18N[getLang()] || I18N.ru;
     const has = (key) => Object.prototype.hasOwnProperty.call(dict, key);
     const roots = document.querySelectorAll('#scene_panel_modal, #scene_panel_settings_compact, #scene_panel_float');
 
     roots.forEach((root) => {
-        root.querySelectorAll('[data-i18n]').forEach((el) => {
-            const key = el.getAttribute('data-i18n');
+        root.querySelectorAll('[data-sp-i18n]').forEach((el) => {
+            const key = el.getAttribute('data-sp-i18n');
             if (has(key)) el.innerHTML = dict[key];
         });
-        root.querySelectorAll('[data-i18n-ph]').forEach((el) => {
-            const key = el.getAttribute('data-i18n-ph');
+        root.querySelectorAll('[data-sp-ph]').forEach((el) => {
+            const key = el.getAttribute('data-sp-ph');
             if (has(key)) el.setAttribute('placeholder', dict[key]);
         });
-        root.querySelectorAll('[data-i18n-title]').forEach((el) => {
-            const key = el.getAttribute('data-i18n-title');
+        root.querySelectorAll('[data-sp-title]').forEach((el) => {
+            const key = el.getAttribute('data-sp-title');
             if (has(key)) el.setAttribute('title', dict[key]);
         });
     });
