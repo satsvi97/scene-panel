@@ -1,0 +1,96 @@
+name: "🐞 Баг / Bug report"
+description: "Что-то работает не так — расскажите, что случилось"
+title: "[bug] "
+labels: ["bug", "needs-info"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ✦ **Спасибо, что нашли время!** ✦
+        Чем точнее описание, тем быстрее найдём причину.
+        Версию расширения видно **в правом нижнем углу панели** (например, `v0.9.1`).
+
+  - type: input
+    id: version
+    attributes:
+      label: "Версия расширения"
+      description: "Смотрите внизу панели сцены"
+      placeholder: "v0.9.1"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install
+    attributes:
+      label: "Как установлено расширение"
+      options:
+        - "По URL из GitHub"
+        - "Вручную (папка в third-party)"
+        - "Не знаю"
+    validations:
+      required: true
+
+  - type: textarea
+    id: what
+    attributes:
+      label: "Что произошло"
+      description: "Коротко опишите проблему"
+      placeholder: "Панель не открывается / цифры не видны / погода не меняется…"
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: "Шаги воспроизведения"
+      description: "Что нужно сделать, чтобы повторить баг"
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: "Ожидаемое поведение"
+      placeholder: "Я ожидал(а), что…"
+    validations:
+      required: false
+
+  - type: dropdown
+    id: theme
+    attributes:
+      label: "Тема панели"
+      options:
+        - "Авто"
+        - "Тёмная"
+        - "Светлая"
+
+  - type: dropdown
+    id: weather
+    attributes:
+      label: "Weather Background установлен?"
+      options:
+        - "Да"
+        - "Нет"
+        - "Не знаю"
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: "Скриншоты, логи, детали"
+      description: |
+        Скриншот очень помогает. Логи консоли браузера (F12 → Console) тоже.
+        Перетащите картинку прямо в это поле.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: "Проверки перед отправкой"
+      options:
+        - label: "Я обновил(а) страницу через Ctrl+F5 и перезапустил(а) таверну"
+        - label: "Я проверил(а), что версия в углу панели совпадает с установленной"

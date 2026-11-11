@@ -1,0 +1,48 @@
+name: "✨ Идея / Feature request"
+description: "Чего не хватает в Scene Panel"
+title: "[idea] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ✦ **Расскажите, какой магии не хватает** ✦
+        Пара предложений — уже отлично. Чем понятнее сценарий, тем выше шанс, что идея попадёт в релиз.
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: "Что хотите добавить"
+      placeholder: "Например: экспорт сцены в JSON, откат на снимок, связь с лорбуком…"
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: "Зачем это нужно"
+      description: "Какую задачу в игре это решает"
+      placeholder: "Во время долгого отыгрыша хочется…"
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: "Как справляетесь сейчас"
+      description: "Обходные пути, другие расширения, ручные заметки"
+    validations:
+      required: false
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: "Область"
+      options:
+        - "Панель сцены"
+        - "Календарь и время"
+        - "Погода / Weather Background"
+        - "Диагностика и история"
+        - "Статистика"
+        - "Темы и оформление"
+        - "Прочее"

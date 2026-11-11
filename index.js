@@ -24,14 +24,16 @@ const MIN_MONTH = 5;
 const MAX_MONTH = 60;
 
 const KEY_ALIASES = {
-    'день': 'day', 'day': 'day',
-    'дата': 'date', 'date': 'date',
-    'место': 'place', 'place': 'place', 'где': 'place',
-    'время': 'timeOfDay', 'time': 'timeOfDay', 'timeofday': 'timeOfDay',
-    'погода': 'weather', 'weather': 'weather',
-    'рядом': 'present', 'present': 'present', 'кто': 'present',
-    'висит': 'open', 'open': 'open', 'нити': 'open', 'threads': 'open',
-    'тон': 'mood', 'mood': 'mood',
+    'день': 'day', 'day': 'day', 'dag': 'day',
+    'дата': 'date', 'date': 'date', 'datum': 'date',
+    'место': 'place', 'place': 'place', 'где': 'place', 'місце': 'place', 'де': 'place', 'plats': 'place',
+    'время': 'timeOfDay', 'time': 'timeOfDay', 'timeofday': 'timeOfDay', 'час': 'timeOfDay', 'tid': 'timeOfDay',
+    'погода': 'weather', 'weather': 'weather', 'väder': 'weather', 'vader': 'weather',
+    'рядом': 'present', 'present': 'present', 'кто': 'present', 'поруч': 'present', 'хто': 'present',
+    'närvarande': 'present', 'narvarande': 'present',
+    'висит': 'open', 'open': 'open', 'нити': 'open', 'threads': 'open', 'нитки': 'open',
+    'trådar': 'open', 'tradar': 'open',
+    'тон': 'mood', 'mood': 'mood', 'ton': 'mood',
 };
 
 // Значения, которые понимает Weather Background (setWeatherEffect).
@@ -51,7 +53,7 @@ const WEATHER_STATES = {
 let weatherRendererPromise = null;
 
 // Версия расширения (дублирует manifest.json для отображения в UI)
-const PANEL_VERSION = '0.9.0';
+const PANEL_VERSION = '0.9.1';
 
 // Встроенная разметка панели. Не зависит от внешнего panel.html и его кэша.
 const PANEL_HTML = `<div class="scene-panel-slider" id="scene_panel_slider">
@@ -533,7 +535,7 @@ function parseTag(body) {
             continue;
         }
         if (field === 'day') {
-            if (value === '+1' || value === 'следующий') {
+            if (value === '+1' || value === 'следующий' || value === 'наступний' || value === 'nästa' || value === 'nasta') {
                 out.day = state.day + 1;
             } else {
                 const n = parseInt(value, 10);

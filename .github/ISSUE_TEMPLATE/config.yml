@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: "☾ Документация / Documentation"
+    url: https://github.com/satsvi97/scene-panel#readme
+    about: "Установка, формат тега, настройки и решение частых проблем"
+  - name: "🌦 Weather Background"
+    url: https://github.com/tankisthuieglot-hue/sillytavern-weather-background
+    about: "Если проблема с фоном погоды — сначала проверьте это расширение"

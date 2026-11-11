@@ -2,7 +2,7 @@
 
 **Панель сцены для SillyTavern** · *Scene Panel for SillyTavern*
 
-[🇷🇺 Русский](#-русский) · [🇬🇧 English](#-english)
+[🇷🇺 Русский](#-русский) · [🇺🇦 Українська](#-українська) · [🇸🇪 Svenska](#-svenska) · [🇬🇧 English](#-english)
 
 ![version](https://img.shields.io/badge/version-0.9.0-b8b8ff?style=flat-square)
 ![license](https://img.shields.io/badge/license-MIT-a99bf5?style=flat-square)
@@ -152,6 +152,14 @@ SillyTavern/public/scripts/extensions/third-party/scene-panel
 - **Панель открылась «не той» разметкой.** Жёсткое обновление (`Ctrl+F5`); при повторе — переустановка.
 - **Погода не меняет фон.** Проверьте, что Weather Background включён и в его настройках не стоит «постоянный эффект none».
 
+### 🐞 Баги и идеи
+
+- 🐞 [Сообщить о баге](https://github.com/satsvi97/scene-panel/issues/new?template=bug_report.yml)
+- ✨ [Предложить идею](https://github.com/satsvi97/scene-panel/issues/new?template=feature_request.yml)
+- 📋 [Все задачи и баги](https://github.com/satsvi97/scene-panel/issues)
+
+В шаблоне бага есть поля для версии, темы и шагов воспроизведения — так починим быстрее.
+
 ### 🗺 Дальше в планах
 
 - экспорт/импорт сцены в JSON;
@@ -165,7 +173,341 @@ SillyTavern/public/scripts/extensions/third-party/scene-panel
 
 Можно свободно использовать, изменять, распространять и встраивать в свои проекты, при условии сохранения уведомления об авторстве.
 
-> ✦ Сделано с любовью для **Selena's Tavern** · *Made with love for Selena's Tavern* ✦
+> ✦ Сделано с любовью для **Selena's Tavern** ✦
+
+---
+
+## ☾ Українська
+
+> *«Палац Ночі, покої Ризанду. Ранок. Крихке перемир'я. За дверима чекає Фейра.»*
+
+**Scene Panel** — це маленька гримуарна панель для рольових ігор: вона пам'ятає, **де** ви, **коли**, **хто поруч**, **що висить** і **яким тоном** звучить сцена. Стан живе **всередині чату**, тому кожна історія має власний календар і власну сцену — вони не змішуються.
+
+Головна магія: ШІ може **сам** оновлювати сцену службовим тегом наприкінці відповіді. Тег вирізається з тексту — у чаті його не видно, а панель уже знає, що настав наступний день.
+
+### ✨ Що вміє
+
+| | Можливість | Опис |
+|---|---|---|
+| 📅 | **Календар** | Лічильник дня + назва місяця + кількість днів у місяці (5–60). Клік по дню — перехід. |
+| 📍 | **Місце** | Вільний рядок: «Палац Ночі, покої Ризанду». |
+| 🕐 | **Час доби** | Вільний текст + швидкі чипи: світанок · ранок · день · вечір · захід · ніч. |
+| 🌦 | **Погода** | Вільний текст; за наявності Weather Background вмикає фон сцени. |
+| 👥 | **Хто поруч** | Список персонажів. Під полем — чипи `＋ Ім'я` з останніх повідомлень. |
+| ⚡ | **Відкриті нитки** | Що висить і чекає розвитку (по одній на рядок). |
+| 🌫 | **Тон сцени** | Емоційна рамка: «крихке перемир'я», «холодна лють». |
+| 🏷 | **Дод. поля** | Будь-які `ключ=значення` — теж потрапляють у промпт. |
+| ⏱ | **Лічильник сесії** | День + `ГГ:ХХ`, кнопки `− година / + година / − день / + день`. |
+| 🧠 | **Інжект у промпт** | Стан сцени автоматично вставляється в контекст (роль на вибір). |
+| 🩺 | **Діагностика** | Відновлення сцени з останніх повідомлень або зі знімка. |
+| 📊 | **Статистика** | Окрема сторінка: оновлення, часті персонажі, місця, час, погода. |
+| 🎨 | **Тема** | Авто / темна / світла (бузкова). |
+| ✨ | **Естетика** | Місячний пил на тлі, плаваюча картка, дрейф по екрану. |
+
+### 🌙 Встановлення
+
+**Через URL (рекомендовано):**
+
+1. Відкрийте SillyTavern → **Extensions** → **Install extension**.
+2. Вставте адресу:
+   ```
+   https://github.com/satsvi97/scene-panel
+   ```
+3. Перезавантажте сторінку таверни (`F5`, під час оновлення — `Ctrl+F5`).
+4. У меню **Extensions** з'явиться блок **✦ SCENE PANEL ✦**.
+
+**Вручну:**
+
+Скопіюйте теку в:
+
+```
+SillyTavern/public/scripts/extensions/third-party/scene-panel
+```
+
+і перезавантажте таверну.
+
+> ☾ Розширення не потребує серверних модулів і нічого не пише у файли — лише в `chat_metadata` поточного чату.
+
+### 🌌 Як користуватися
+
+**1. Відкрити панель.** Кнопка **«відкрити панель сцени»** в меню розширень, іконка **☾** у верхній панелі таверни або гаряча клавіша **Alt+Shift+S**.
+
+**2. Заповнити сцену.** Усе можна вписати вручну: день, місце, час, погоду, хто поруч, нитки, тон, дод. поля. Зміни зберігаються миттєво.
+
+**3. Дозволити ШІ оновлювати.** Наприкінці відповіді модель пише службовий рядок:
+
+```
+[[scene: день=+1; місце=Палац Ночі; час=ранок; поруч=Ризанд, Фейра; висить=розмова з Фейрою; погода=дощ; тон=крихке перемир'я]]
+```
+
+Рядок **зникає з тексту**, а поля панелі оновлюються. Якщо модель не написала тег — панель просто залишається ручною, нічого не ламається.
+
+**4. Свайп.** Усередині панелі свайп **вліво** відкриває статистику, свайп **вправо** повертає до сцени. На ПК — кнопка **📊** у шапці або крапки-індикатори внизу.
+
+### 🏷 Формат тегу
+
+Ключі можна писати українською, російською або англійською; розділювач — `;` (допускається `:`).
+
+| Українська | English | Значення |
+|---|---|---|
+| `день` | `day` | число, або `+1` / `наступний` (`+1` = наступний день) |
+| `дата` | `date` | вільний рядок |
+| `місце` | `place`, `де` | вільний рядок |
+| `час` | `time`, `timeofday` | `ранок`, `ніч`, … |
+| `погода` | `weather` | `дощ`, `гроза`, `сніг`, `ясно`, … |
+| `поруч` | `present`, `хто` | імена через кому |
+| `висить` | `open`, `нитки`, `threads` | через `;` або `\|` |
+| `тон` | `mood` | вільний рядок |
+
+Усе, що не збіглося з ключами вище, зберігається як **дод. поле** (`сюжет=погоня`, `напруга=висока`). Службовий ключ `время_сессии` ігнорується.
+
+### 🌦 Інтеграція з Weather Background
+
+Якщо встановлено розширення [Weather Background](https://github.com/tankisthuieglot-hue/sillytavern-weather-background), панель уміє вмикати його фон за погодою сцени:
+
+`дощ → rain` · `гроза → thunderstorm` · `сніг → snow` · `завірюха → blizzard` · `хмарно → cloudy` · `сонячно → sunny` · `град → hail` · `ясно → clear`
+
+- вмикається галочкою **«🌦 фон погоди (Weather Background)»**;
+- враховує налаштування самого Weather Background (вимкнено / мобільний режим);
+- якщо Weather Background не встановлено — панель тихо працює без нього.
+
+### 🩺 Діагностика та історія
+
+- Під час кожної зміни сцени зберігається **знімок** (до 20 останніх, у `chat_metadata`).
+- Кнопка **«перевірити й відновити»**:
+  1. сканує останні **12 повідомлень** на теги `[[scene: …]]`;
+  2. якщо тегів немає — бере **останній знімок**;
+  3. показує результат під кнопкою: `Тегів: N. Знімків: M. ✅ Відновлено з …`.
+- Знімок робиться й **перед кнопкою «скинути»** — тож випадкове скидання можна відкотити.
+
+### 📊 Статистика
+
+Окрема сторінка панелі рахує для цього чату:
+
+- кількість оновлень сцени й максимальний день;
+- найчастіших персонажів «поруч»;
+- часті місця, час доби й погоду.
+
+Кнопки **«оновити»** та **«очистити»**. Дані зберігаються окремо від сцени — скидання сцени статистику не стирає.
+
+### ⚙️ Налаштування
+
+| Налаштування | Що робить |
+|---|---|
+| **розширення увімкнено** | Головний вимикач. |
+| **вставляти сцену в промпт** | Додає стан сцени в контекст. |
+| **роль інжекту** | `system` / `user` / `assistant`. |
+| **🎨 тема панелі** | `авто` (за фоном таверни) / `темна` / `світла`. |
+| **плаваюча панель у чаті** | Компактна картка в куті (її можна тягати мишею). |
+| **🌦 фон погоди (Weather Background)** | Зв'язок із розширенням погоди. |
+
+### 💾 Де зберігаються дані
+
+| Ключ | Вміст |
+|---|---|
+| `chat_metadata.scene_panel` | Поточна сцена чату |
+| `chat_metadata.scene_panel_history` | Знімки (до 20) |
+| `chat_metadata.scene_panel_stats` | Статистика |
+| `extension_settings.scene_panel` | Налаштування розширення |
+
+У кожного чату — своя сцена, своя історія й своя статистика.
+
+### 🛠 Якщо щось пішло не так
+
+- **Не видно оновлення?** Перевірте версію — вона написана **в правому нижньому куті панелі** (`v0.9.0`). Потім `Ctrl+F5` і перезапуск таверни.
+- **Помилка `Need to specify how to reconcile divergent branches` під час оновлення.** Історія git розійшлася: видаліть розширення й встановіть заново за URL.
+- **Панель відкрилася «не тією» розміткою.** Жорстке оновлення (`Ctrl+F5`); якщо повторюється — перевстановлення.
+- **Погода не змінює фон.** Перевірте, що Weather Background увімкнено і в його налаштуваннях не стоїть «постійний ефект none».
+
+### 🐞 Баги та ідеї
+
+- 🐞 [Повідомити про баг](https://github.com/satsvi97/scene-panel/issues/new?template=bug_report.yml)
+- ✨ [Запропонувати ідею](https://github.com/satsvi97/scene-panel/issues/new?template=feature_request.yml)
+- 📋 [Усі задачі та баги](https://github.com/satsvi97/scene-panel/issues)
+
+У шаблоні бага є поля для версії, теми та кроків відтворення — так виправимо швидше.
+
+### 🗺 Далі в планах
+
+- експорт/імпорт сцени в JSON;
+- відкат на будь-який зі знімків історії;
+- зв'язок із лорбуками та картками персонажів;
+- прогноз погоди на кілька днів уперед.
+
+### 📜 Ліцензія
+
+**MIT** © 2026 Selena's Tavern (satsvi97) — див. [LICENSE](LICENSE).
+
+Можна вільно використовувати, змінювати, поширювати й вбудовувати у свої проєкти за умови збереження повідомлення про авторство.
+
+> ✦ Зроблено з любов'ю для **Selena's Tavern** ✦
+
+---
+
+## ☾ Svenska
+
+> *"Nattpalatset, Rhysands gemak. Morgon. En skör vapenvila. Feyre väntar utanför dörren."*
+
+**Scene Panel** är en liten grimoire-lik panel för rollspel: den minns **var** ni är, **när**, **vilka som är nära**, **vilka trådar som hänger** och **vilken ton** scenen har. Tillståndet lever **inuti chatten**, så varje berättelse har sin egen kalender och sin egen scen — de blandas aldrig.
+
+Huvudmagin: AI:n kan **själv** uppdatera scenen med en servicetagg i slutet av svaret. Taggen klipps bort från texten — du ser den aldrig i chatten, men panelen vet redan att nästa dag har kommit.
+
+### ✨ Funktioner
+
+| | Funktion | Beskrivning |
+|---|---|---|
+| 📅 | **Kalender** | Dagsräknare + månadsnamn + antal dagar per månad (5–60). Klicka på en dag för att hoppa. |
+| 📍 | **Plats** | Fri text: "Nattpalatset, Rhysands gemak". |
+| 🕐 | **Tid på dygnet** | Fri text + snabbchips: gryning · morgon · dag · kväll · solnedgång · natt. |
+| 🌦 | **Väder** | Fri text; styr Weather Background-effekten när den är installerad. |
+| 👥 | **Närvarande** | Karaktärslista. Chips `＋ Namn` dyker upp från senaste meddelanden. |
+| ⚡ | **Öppna trådar** | Vad som hänger och väntar (en per rad). |
+| 🌫 | **Scenens ton** | Känslomässig ram: "skör vapenvila", "kall vrede". |
+| 🏷 | **Egna fält** | Alla `nyckel=värde` — injiceras också i prompten. |
+| ⏱ | **Sessionsklocka** | Dag + `HH:MM`, knappar `− timme / + timme / − dag / + dag`. |
+| 🧠 | **Promptinjektion** | Scenens tillstånd läggs i kontexten (roll valbar). |
+| 🩺 | **Diagnostik** | Återställer scenen från senaste meddelanden eller från en ögonblicksbild. |
+| 📊 | **Statistik** | Egen sida: uppdateringar, vanligaste karaktärer, platser, tider, väder. |
+| 🎨 | **Tema** | Auto / mörkt / ljust (lila). |
+| ✨ | **Estetik** | Månstoft i bakgrunden, flytande kort, dragbar panel. |
+
+### 🌙 Installation
+
+**Via URL (rekommenderas):**
+
+1. Öppna SillyTavern → **Extensions** → **Install extension**.
+2. Klistra in:
+   ```
+   https://github.com/satsvi97/scene-panel
+   ```
+3. Ladda om tavernan (`F5`, eller `Ctrl+F5` efter en uppdatering).
+4. Blocket **✦ SCENE PANEL ✦** dyker upp i **Extensions**.
+
+**Manuellt:**
+
+Kopiera mappen till:
+
+```
+SillyTavern/public/scripts/extensions/third-party/scene-panel
+```
+
+och starta om SillyTavern.
+
+> ☾ Inga servermoduler krävs. Inget skrivs till disk — bara till aktuell chats `chat_metadata`.
+
+### 🌌 Så använder du den
+
+**1. Öppna panelen.** Knappen **"öppna scenpanelen"** i Extensions, ikonen **☾** i tavernans överkant, eller snabbtangenten **Alt+Shift+S**.
+
+**2. Fyll i scenen.** Allt kan skrivas för hand: dag, plats, tid, väder, närvarande, trådar, ton, egna fält. Ändringar sparas direkt.
+
+**3. Låt AI:n uppdatera den.** I slutet av ett svar skriver modellen:
+
+```
+[[scene: day=+1; place=Night Palace; time=morning; present=Rhysand, Feyre; open=talk with Feyre; weather=rain; mood=fragile truce]]
+```
+
+Raden **försvinner från texten** och panelen uppdateras. Om modellen inte skriver någon tagg stannar panelen helt enkelt i manuellt läge — inget går sönder.
+
+**4. Svep.** Svep **vänster** inuti panelen för statistik, svep **höger** för att återgå till scenen. På desktop: knappen **📊** i huvudet eller prickarna längst ned.
+
+### 🏷 Taggformat
+
+Nycklar kan skrivas på svenska, ryska eller engelska; avgränsare är `;` (`:` fungerar också).
+
+| Svenska | English | Värde |
+|---|---|---|
+| `dag` | `day` | tal, eller `+1` / `nästa` |
+| `datum` | `date` | fri text |
+| `plats` | `place` | fri text |
+| `tid` | `time`, `timeofday` | `morgon`, `natt`, … |
+| `väder` | `weather` | `regn`, `åska`, `snö`, `klart`, … |
+| `närvarande` | `present` | namn separerade med komma |
+| `trådar` | `open`, `threads` | separerade med `;` eller `\|` |
+| `ton` | `mood` | fri text |
+
+Allt som inte matchar nycklarna ovan sparas som **eget fält** (`handling=jakt`, `spänning=hög`). Servicenyckeln `время_сессии` ignoreras.
+
+### 🌦 Weather Background-integration
+
+Om [Weather Background](https://github.com/tankisthuieglot-hue/sillytavern-weather-background) är installerat kan panelen styra dess bakgrund från scenens väder:
+
+`regn → rain` · `åska → thunderstorm` · `snö → snow` · `snöstorm → blizzard` · `mulet → cloudy` · `soligt → sunny` · `hagel → hail` · `klart → clear`
+
+- aktiveras med kryssrutan **"🌦 vederbakgrund (Weather Background)"**;
+- respekterar Weather Backgrounds egna inställningar (avstängt / mobilläge);
+- om Weather Background saknas fungerar panelen tyst utan den.
+
+### 🩺 Diagnostik och historik
+
+- Varje scenändring sparar en **ögonblicksbild** (upp till 20, i `chat_metadata`).
+- Knappen **"kontrollera och återställ"**:
+  1. skannar de senaste **12 meddelandena** efter `[[scene: …]]`-taggar;
+  2. om inga taggar finns tar den **senaste ögonblicksbilden**;
+  3. visar resultatet under knappen: `Taggar: N. Ögonblicksbilder: M. ✅ Återställt från …`.
+- En ögonblicksbild tas också **före "återställ"**, så en oavsiktlig nollställning kan ångras.
+
+### 📊 Statistik
+
+En egen sida i panelen, räknad per chatt:
+
+- antal scenuppdateringar och högsta dag;
+- vanligaste karaktärerna i "närvarande";
+- vanliga platser, tider på dygnet och väder.
+
+Knappar **uppdatera** och **rensa**. Statistiken ligger separat från scenen — att nollställa scenen raderar den inte.
+
+### ⚙️ Inställningar
+
+| Inställning | Effekt |
+|---|---|
+| **tillägget aktiverat** | Huvudbrytare. |
+| **injicera scenen i prompten** | Lägger scenens tillstånd i kontexten. |
+| **injektionsroll** | `system` / `user` / `assistant`. |
+| **🎨 panelens tema** | `auto` (från tavernans bakgrund) / `mörkt` / `ljust`. |
+| **flytande panel i chatten** | Kompakt dragbart kort i hörnet. |
+| **🌦 vederbakgrund** | Koppling till Weather Background. |
+
+### 💾 Var data lagras
+
+| Nyckel | Innehåll |
+|---|---|
+| `chat_metadata.scene_panel` | Chattens aktuella scen |
+| `chat_metadata.scene_panel_history` | Ögonblicksbilder (upp till 20) |
+| `chat_metadata.scene_panel_stats` | Statistik |
+| `extension_settings.scene_panel` | Tilläggets inställningar |
+
+Varje chatt har sin egen scen, historik och statistik.
+
+### 🛠 Felsökning
+
+- **Ingen uppdatering syns?** Kontrollera versionen **i panelens nedre högra hörn** (`v0.9.0`), kör sedan `Ctrl+F5` och starta om tavernan.
+- **`Need to specify how to reconcile divergent branches` vid uppdatering.** Git-historiken har divergerat: ta bort tillägget och installera om via URL.
+- **Panelen öppnades med fel layout.** Hård uppdatering (`Ctrl+F5`); upprepas det — installera om.
+- **Vädret ändrar inte bakgrunden.** Kontrollera att Weather Background är aktiverat och att dess "permanent effekt" inte är satt till none.
+
+### 🐞 Buggar och idéer
+
+- 🐞 [Rapportera en bugg](https://github.com/satsvi97/scene-panel/issues/new?template=bug_report.yml)
+- ✨ [Föreslå en idé](https://github.com/satsvi97/scene-panel/issues/new?template=feature_request.yml)
+- 📋 [Alla ärenden och buggar](https://github.com/satsvi97/scene-panel/issues)
+
+Buggmallen har fält för version, tema och reproduktionssteg — då går det snabbare att fixa.
+
+### 🗺 Vägkarta
+
+- export/import av scenen som JSON;
+- återställning till valfri ögonblicksbild;
+- integration med lorebooks och karaktärskort;
+- flera dagars väderprognos.
+
+### 📜 Licens
+
+**MIT** © 2026 Selena's Tavern (satsvi97) — se [LICENSE](LICENSE).
+
+Fritt att använda, ändra, distribuera och bädda in i egna projekt, förutsatt att upphovsrättsmeddelandet behålls.
+
+> ✦ Skapad med kärlek för **Selena's Tavern** ✦
 
 ---
 
@@ -238,7 +580,7 @@ The line **disappears from the text** and the panel updates. If the model writes
 
 ### 🏷 Tag format
 
-Keys may be Russian or English; separator is `;` (`:` also works).
+Keys may be Russian, Ukrainian, Swedish or English; separator is `;` (`:` also works).
 
 | Russian | English | Value |
 |---|---|---|
@@ -310,6 +652,14 @@ Each chat has its own scene, history and statistics.
 - **`Need to specify how to reconcile divergent branches` on update.** The git history diverged: delete the extension and reinstall it via URL.
 - **Panel opened with the wrong layout.** Hard refresh (`Ctrl+F5`); if it repeats — reinstall.
 - **Weather doesn't change the background.** Make sure Weather Background is enabled and its "permanent effect" is not set to none.
+
+### 🐞 Bugs & ideas
+
+- 🐞 [Report a bug](https://github.com/satsvi97/scene-panel/issues/new?template=bug_report.yml)
+- ✨ [Suggest a feature](https://github.com/satsvi97/scene-panel/issues/new?template=feature_request.yml)
+- 📋 [All issues and bugs](https://github.com/satsvi97/scene-panel/issues)
+
+The bug template asks for version, theme and reproduction steps — that makes fixes much faster.
 
 ### 🗺 Roadmap
 
