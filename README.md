@@ -1,4 +1,4 @@
-﻿# ✦ SCENE PANEL ✦
+﻿# ✦ SCENE PANEL ✦ (в разработке)
 
 **Панель сцены для SillyTavern** · *Scene Panel for SillyTavern*
 
