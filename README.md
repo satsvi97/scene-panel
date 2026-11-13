@@ -4,6 +4,8 @@
 
 [🇷🇺 Русский](#-русский) · [🇺🇦 Українська](#-українська) · [🇸🇪 Svenska](#-svenska) · [🇬🇧 English](#-english)
 
+📖 [Документация / Documentation](docs/DOCUMENTATION.md) · 🧪 [План тестирования / Test plan](docs/TESTPLAN.md)
+
 ![version](https://img.shields.io/badge/version-0.10.2-b8b8ff?style=flat-square)
 ![license](https://img.shields.io/badge/license-MIT-a99bf5?style=flat-square)
 ![platform](https://img.shields.io/badge/SillyTavern-extension-7c6ee0?style=flat-square)
