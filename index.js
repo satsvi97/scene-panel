@@ -91,7 +91,7 @@ const WEATHER_STATES = {
 let weatherRendererPromise = null;
 
 // Версия расширения (дублирует manifest.json для отображения в UI)
-const PANEL_VERSION = '0.11.3';
+const PANEL_VERSION = '0.12.0';
 
 // Встроенная разметка панели. Не зависит от внешнего panel.html и его кэша.
 const PANEL_HTML = `<div class="scene-panel-slider" id="scene_panel_slider">
@@ -221,6 +221,10 @@ const PANEL_HTML = `<div class="scene-panel-slider" id="scene_panel_slider">
         <input type="checkbox" id="scene_panel_day_rollback">
         <span data-sp-i18n="dayRollback">разрешать откат дня назад</span>
     </label>
+    <label class="checkbox_label scene-panel-check">
+        <input type="checkbox" id="scene_panel_mobile">
+        <span data-sp-i18n="mobileMode">📱 мобильный режим (FAB + компактный календарь)</span>
+    </label>
 
     <div class="scene-panel-credit">by ✦ Selena's Tavern ✦</div>
     <div class="scene-panel-version">v${PANEL_VERSION}</div>
@@ -288,6 +292,7 @@ const I18N = {
         testApplied: '✅ Пример тега применён — панель работает.',
         copyOk: '✅ Скопирована только инструкция (без строки состояния) — вставьте в Author\'s Note.',
         dayRollback: 'разрешать откат дня назад',
+        mobileMode: '📱 мобильный режим (FAB + компактный календарь)',
         copyFail: '⚠️ Не удалось скопировать. Текст инструкции выведен в консоль.',
         debug: '🐞 отладка в консоль',
         slideScene: 'сцена', slideStats: 'статистика',
@@ -331,6 +336,7 @@ const I18N = {
         testApplied: '✅ Sample tag applied — the panel works.',
         copyOk: '✅ Instruction copied (without the state line) — paste it into Author\'s Note.',
         dayRollback: 'allow rolling the day back',
+        mobileMode: '📱 mobile mode (FAB + compact calendar)',
         copyFail: '⚠️ Copy failed. The instruction text was printed to the console.',
         debug: '🐞 console debug',
         slideScene: 'scene', slideStats: 'statistics',
@@ -374,6 +380,7 @@ const I18N = {
         testApplied: '✅ Приклад тегу застосовано — панель працює.',
         copyOk: '✅ Скопійовано лише інструкцію (без рядка стану) — вставте в Author\'s Note.',
         dayRollback: 'дозволяти відкат дня назад',
+        mobileMode: '📱 мобільний режим (FAB + компактний календар)',
         copyFail: '⚠️ Не вдалося скопіювати. Текст інструкції виведено в консоль.',
         debug: '🐞 відлагодження в консоль',
         slideScene: 'сцена', slideStats: 'статистика',
@@ -417,6 +424,7 @@ const I18N = {
         testApplied: '✅ Exempeltaggen tillämpad — panelen fungerar.',
         copyOk: '✅ Endast instruktionen kopierades (utan tillståndsraden) — klistra in den i Author\'s Note.',
         dayRollback: 'tillåt att dagen går bakåt',
+        mobileMode: '📱 mobilläge (FAB + kompakt kalender)',
         copyFail: '⚠️ Kunde inte kopiera. Instruktionstexten skrevs ut i konsolen.',
         debug: '🐞 konsolldebug',
         slideScene: 'scen', slideStats: 'statistik',
@@ -515,7 +523,7 @@ function emptyState() {
 
 function getSettings() {
     if (!extension_settings[MODULE] || typeof extension_settings[MODULE] !== 'object') {
-        extension_settings[MODULE] = { enabled: true, inject: true, role: 'system', floating: true, floatPos: null, weatherIntegration: true, theme: 'auto', lang: 'ru', debug: false, allowDayRollback: false };
+        extension_settings[MODULE] = { enabled: true, inject: true, role: 'system', floating: true, floatPos: null, weatherIntegration: true, theme: 'auto', lang: 'ru', debug: false, allowDayRollback: false, mobile: true, floatPeek: true, fabPos: null };
     }
     const s = extension_settings[MODULE];
     if (typeof s.enabled !== 'boolean') s.enabled = true;
@@ -527,6 +535,9 @@ function getSettings() {
     if (!LANGS.includes(s.lang)) s.lang = 'ru';
     if (typeof s.debug !== 'boolean') s.debug = false;
     if (typeof s.allowDayRollback !== 'boolean') s.allowDayRollback = false;
+    if (typeof s.mobile !== 'boolean') s.mobile = true;
+    if (typeof s.floatPeek !== 'boolean') s.floatPeek = true;
+    if (s.fabPos && (typeof s.fabPos.x !== 'number' || typeof s.fabPos.y !== 'number')) s.fabPos = null;
     return s;
 }
 
@@ -735,6 +746,7 @@ function refresh() {
         $panel.find('#scene_panel_weather_integration').prop('checked', getSettings().weatherIntegration);
         $panel.find('#scene_panel_debug').prop('checked', !!getSettings().debug);
         $panel.find('#scene_panel_day_rollback').prop('checked', !!getSettings().allowDayRollback);
+        $panel.find('#scene_panel_mobile').prop('checked', !!getSettings().mobile);
         $panel.find('#scene_panel_theme').val(getSettings().theme);
         $panel.find('#scene_panel_elapsed_display').text(elapsedTimeString(state));
         const customText = Object.entries(state.custom || {}).map(([k, v]) => k + '=' + v).join('\n');
@@ -746,8 +758,10 @@ function refresh() {
         renderTimeHints();
     }
     applyTheme();
+    applyMobileMode();
     renderFloating();
     renderCalendar('scene_panel_float_cal');
+    renderFabBadge();
 }
 
 function readForm() {
@@ -1142,6 +1156,186 @@ function applyTheme() {
     const theme = resolveTheme();
     $('#scene_panel_modal').attr('data-sp-theme', theme);
     $('#scene_panel_float').attr('data-sp-theme', theme);
+    $('#scene_panel_fab').attr('data-sp-theme', theme);
+}
+
+// ---- Мобильный режим: FAB, компактный календарь, safe-area ----
+
+function isNarrow() {
+    return window.innerWidth <= 768;
+}
+
+function isMobileUi() {
+    return !!getSettings().mobile && isNarrow();
+}
+
+// Показывать FAB только в мобильном режиме
+function mountFab() {
+    if ($('#scene_panel_fab').length > 0) return;
+    const $fab = $('<div>')
+        .attr('id', 'scene_panel_fab')
+        .addClass('scene-panel-fab')
+        .attr('title', 'Scene Panel')
+        .attr('role', 'button')
+        .attr('aria-label', 'Scene Panel')
+        .append($('<span>').addClass('scene-panel-fab-icon').text('☾'))
+        .append($('<span>').addClass('scene-panel-fab-badge').attr('id', 'scene_panel_fab_badge').text('1'));
+    $('body').append($fab);
+}
+
+function renderFabBadge() {
+    $('#scene_panel_fab_badge').text(String(getState().day));
+}
+
+function applyMessFabPos() {
+    const $fab = $('#scene_panel_fab');
+    if ($fab.length === 0) return;
+    const pos = getSettings().fabPos;
+    const size = 48;
+    if (pos && typeof pos.x === 'number' && typeof pos.y === 'number') {
+        const x = Math.max(6, Math.min(window.innerWidth - size - 6, pos.x));
+        const y = Math.max(6, Math.min(window.innerHeight - size - 6, pos.y));
+        $fab.css({ left: x + 'px', top: y + 'px', right: 'auto', bottom: 'auto' });
+    } else {
+        $fab.css({ left: 'auto', top: 'auto', right: '14px', bottom: 'calc(92px + env(safe-area-inset-bottom, 0px))' });
+    }
+}
+
+// Применяет/снимает мобильные классы
+function applyMobileMode() {
+    const on = isMobileUi();
+    document.body.classList.toggle('sp-mobile', on);
+    $('#scene_panel_fab').toggle(on);
+    const $float = $('#scene_panel_float');
+    if ($float.length) {
+        if (on) {
+            $float.toggleClass('is-peek', !!getSettings().floatPeek);
+        } else {
+            $float.removeClass('is-peek');
+        }
+    }
+    if (on) {
+        applyMessFabPos();
+        renderFabBadge();
+    }
+}
+
+// Свайпы/тап по FAB
+function initFab() {
+    const el = document.getElementById('scene_panel_fab');
+    if (!el) return;
+
+    let startX = 0;
+    let startY = 0;
+    let origX = 0;
+    let origY = 0;
+    let dx = 0;
+    let dy = 0;
+    let dragging = false;
+    let moved = false;
+    let t0 = 0;
+
+    el.addEventListener('pointerdown', (e) => {
+        if (typeof e.button === 'number' && e.button !== 0) return;
+        const rect = el.getBoundingClientRect();
+        startX = e.clientX;
+        startY = e.clientY;
+        origX = rect.left;
+        origY = rect.top;
+        dx = 0;
+        dy = 0;
+        moved = false;
+        dragging = true;
+        t0 = Date.now();
+        try {
+            el.setPointerCapture(e.pointerId);
+        } catch (err) {
+            /* ignore */
+        }
+    });
+
+    el.addEventListener('pointermove', (e) => {
+        if (!dragging) return;
+        dx = e.clientX - startX;
+        dy = e.clientY - startY;
+        if (Math.abs(dx) > 10 || Math.abs(dy) > 10) moved = true;
+        if (!moved) return;
+        const size = el.offsetWidth || 48;
+        const x = Math.max(6, Math.min(window.innerWidth - size - 6, origX + dx));
+        const y = Math.max(6, Math.min(window.innerHeight - size - 6, origY + dy));
+        el.style.left = x + 'px';
+        el.style.top = y + 'px';
+        el.style.right = 'auto';
+        el.style.bottom = 'auto';
+        e.preventDefault();
+    });
+
+    const finish = (e) => {
+        if (!dragging) return;
+        dragging = false;
+        try {
+            el.releasePointerCapture(e.pointerId);
+        } catch (err) {
+            /* ignore */
+        }
+
+        const dt = Date.now() - t0;
+
+        if (!moved) {
+            openModal();
+            setPanelPage(0);
+            return;
+        }
+
+        const horiz = Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.5;
+        const vert = Math.abs(dy) > 45 && Math.abs(dy) > Math.abs(dx) * 1.5 && dt < 600;
+
+        if (horiz) {
+            openModal();
+            if (dx < 0) {
+                setPanelPage(1);
+            } else {
+                setPanelPage(0);
+                runDiagnostics();
+            }
+            return;
+        }
+
+        if (vert && dy < 0) {
+            openModal();
+            setPanelPage(0);
+            return;
+        }
+
+        // иначе — прилипание к ближайшему краю
+        const rect = el.getBoundingClientRect();
+        const center = rect.left + rect.width / 2;
+        const snapX = center < window.innerWidth / 2 ? 8 : window.innerWidth - rect.width - 8;
+        const snapY = Math.max(6, Math.min(window.innerHeight - rect.height - 6, rect.top));
+        el.style.left = snapX + 'px';
+        el.style.top = snapY + 'px';
+        getSettings().fabPos = { x: Math.round(snapX), y: Math.round(snapY) };
+        try {
+            saveSettings();
+        } catch (err) {
+            /* ignore */
+        }
+    };
+
+    el.addEventListener('pointerup', finish);
+    el.addEventListener('pointercancel', finish);
+}
+
+// Скрыть плавающие элементы, когда открыта экранная клавиатура
+function initKeyboardGuard() {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => {
+        const hidden = window.innerHeight - vv.height > 150;
+        document.body.classList.toggle('sp-kb-open', hidden);
+    };
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
 }
 
 // ---- Страницы панели: сцена ⇄ статистика ----
@@ -1371,6 +1565,8 @@ function applyFloatPos() {
     }
 }
 
+let floatDragDist = 0;
+
 function enableDrag() {
     const el = document.getElementById('scene_panel_float');
     if (!el) return;
@@ -1390,6 +1586,7 @@ function enableDrag() {
         origX = rect.left;
         origY = rect.top;
         dragging = true;
+        floatDragDist = 0;
         try {
             head.setPointerCapture(e.pointerId);
         } catch (err) {
@@ -1399,6 +1596,7 @@ function enableDrag() {
 
     head.addEventListener('pointermove', (e) => {
         if (!dragging) return;
+        floatDragDist = Math.max(floatDragDist, Math.abs(e.clientX - startX) + Math.abs(e.clientY - startY));
         const w = el.offsetWidth;
         const x = Math.max(0, Math.min(window.innerWidth - w - 4, origX + (e.clientX - startX)));
         const y = Math.max(0, Math.min(window.innerHeight - 44, origY + (e.clientY - startY)));
@@ -1413,7 +1611,13 @@ function enableDrag() {
         if (!dragging) return;
         dragging = false;
         const rect = el.getBoundingClientRect();
-        getSettings().floatPos = { x: Math.round(rect.left), y: Math.round(rect.top) };
+        let left = rect.left;
+        // на телефоне прилипаем к ближайшему краю
+        if (isMobileUi() && floatDragDist > 10) {
+            left = rect.left + rect.width / 2 < window.innerWidth / 2 ? 4 : window.innerWidth - rect.width - 4;
+            el.style.left = left + 'px';
+        }
+        getSettings().floatPos = { x: Math.round(left), y: Math.round(rect.top) };
         try {
             saveSettings();
         } catch (err) {
@@ -1482,6 +1686,7 @@ function openModal() {
     const $modal = $('#scene_panel_modal');
     if ($modal.length === 0) return;
     $modal.addClass('is-open').attr('aria-hidden', 'false');
+    document.body.classList.add('sp-modal-open');
     setPanelPage(0);
     refresh();
 }
@@ -1490,6 +1695,7 @@ function closeModal() {
     const $modal = $('#scene_panel_modal');
     if ($modal.length === 0) return;
     $modal.removeClass('is-open').attr('aria-hidden', 'true');
+    document.body.classList.remove('sp-modal-open');
     setPanelPage(0);
 }
 
@@ -1630,6 +1836,16 @@ function bindEvents() {
         }
     });
 
+    $panel.on('change', '#scene_panel_mobile', (e) => {
+        getSettings().mobile = !!e.target.checked;
+        try {
+            saveSettings();
+        } catch (err) {
+            /* ignore */
+        }
+        applyMobileMode();
+    });
+
     // Тест пайплайна: применяет пример тега без участия модели
     $panel.on('click', '#scene_panel_test_tag', () => {
         const sample = parseTag('день=+1; место=Тестовый зал; время=вечер; рядом=Тестовый персонаж; висит=проверка панели; погода=ясно; тон=спокойствие');
@@ -1704,6 +1920,21 @@ function bindEvents() {
     $float.on('click', '#scene_panel_float_collapse', () => {
         $float.toggleClass('is-collapsed');
     });
+
+    // На телефоне тап по шапке разворачивает/сворачивает компактный вид
+    $float.on('click', '.scene-panel-float-head', (e) => {
+        if (e.target.closest('.scene-panel-float-btn')) return;
+        if (!isMobileUi()) return;
+        if (floatDragDist > 6) return;
+        const s = getSettings();
+        s.floatPeek = !s.floatPeek;
+        try {
+            saveSettings();
+        } catch (err) {
+            /* ignore */
+        }
+        $float.toggleClass('is-peek', s.floatPeek);
+    });
     $float.on('click', '#scene_panel_float_hide', () => {
         getSettings().floating = false;
         try {
@@ -1748,6 +1979,9 @@ jQuery(async () => {
         bindEvents();
         enableDrag();
         initPanelSlider();
+        mountFab();
+        initFab();
+        initKeyboardGuard();
         applyLanguage();
         refresh();
         syncPrompt();
@@ -1773,6 +2007,7 @@ jQuery(async () => {
                 };
                 applyFloatPos();
             }
+            applyMobileMode();
         });
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) refresh();

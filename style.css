@@ -1,4 +1,4 @@
-/* Scene Panel 0.3.0 — календарь + мобильная раскладка */
+﻿/* Scene Panel 0.3.0 — календарь + мобильная раскладка */
 
 .scene-panel-settings {
     display: flex;
@@ -1184,3 +1184,127 @@
         radial-gradient(1.2px 1.2px at 88% 12%, rgba(96, 84, 180, 0.85) 50%, transparent 100%);
 }
 
+
+/* ================= МОБИЛЬНЫЙ РЕЖИМ ================= */
+
+/* плавающая кнопка (FAB) */
+.scene-panel-fab {
+    position: fixed;
+    z-index: 4600;
+    width: 48px;
+    height: 48px;
+    right: 14px;
+    bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+    display: none;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(30, 24, 46, 0.92);
+    border: 1px solid rgba(170, 158, 230, 0.55);
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.45), 0 0 14px rgba(184, 184, 255, 0.25);
+    color: #d4d4ff;
+    font-size: 22px;
+    line-height: 1;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body.sp-mobile .scene-panel-fab {
+    display: flex;
+}
+
+body.sp-modal-open .scene-panel-fab {
+    display: none;
+}
+
+body.sp-kb-open .scene-panel-fab,
+body.sp-kb-open .scene-panel-float {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.scene-panel-fab:active {
+    cursor: grabbing;
+    transform: scale(0.96);
+}
+
+.scene-panel-fab-icon {
+    pointer-events: none;
+}
+
+.scene-panel-fab-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    box-sizing: border-box;
+    border-radius: 9px;
+    background: #7c6ee0;
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 8px rgba(124, 110, 224, 0.7);
+    pointer-events: none;
+}
+
+.scene-panel-fab[data-sp-theme="light"] {
+    background: rgba(244, 238, 252, 0.96);
+    border-color: rgba(126, 108, 186, 0.55);
+    color: #4b3d86;
+    box-shadow: 0 6px 22px rgba(60, 50, 90, 0.28);
+}
+
+.scene-panel-fab[data-sp-theme="light"] .scene-panel-fab-badge {
+    background: #7c6ee0;
+    color: #ffffff;
+}
+
+/* компактный вид плавающей карточки */
+body.sp-mobile .scene-panel-float.is-peek .scene-cal-compact,
+body.sp-mobile .scene-panel-float.is-peek .scene-panel-float-threads,
+body.sp-mobile .scene-panel-float.is-peek .scene-panel-float-mood {
+    display: none;
+}
+
+body.sp-mobile .scene-panel-float.is-peek {
+    width: 196px;
+    padding: 7px 9px;
+}
+
+body.sp-mobile .scene-panel-float.is-peek .scene-panel-float-place {
+    margin-bottom: 0;
+}
+
+/* safe-area и размеры на телефонах */
+@media (max-width: 768px) {
+    .scene-panel-float {
+        bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+        right: calc(8px + env(safe-area-inset-right, 0px));
+    }
+
+    .scene-panel-modal {
+        padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .scene-panel-fab {
+        width: 50px;
+        height: 50px;
+        font-size: 23px;
+        right: calc(10px + env(safe-area-inset-right, 0px));
+        bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+    }
+}
+
+@media (max-width: 420px) {
+    body.sp-mobile .scene-panel-float.is-peek {
+        width: 168px;
+    }
+}
