@@ -88,7 +88,7 @@ const WEATHER_STATES = {
 let weatherRendererPromise = null;
 
 // Версия расширения (дублирует manifest.json для отображения в UI)
-const PANEL_VERSION = '0.11.0';
+const PANEL_VERSION = '0.11.1';
 
 // Встроенная разметка панели. Не зависит от внешнего panel.html и его кэша.
 const PANEL_HTML = `<div class="scene-panel-slider" id="scene_panel_slider">
@@ -628,7 +628,6 @@ function sceneText(state) {
     if (customKeys.length > 0) {
         parts.push('доп: ' + customKeys.map((k) => k + '=' + state.custom[k]).join('; '));
     }
-    parts.push('время сессии: ' + elapsedTimeString(state));
     return parts.join('. ') + '. ' +
         'Это текущее состояние сцены. ' +
         'ОБЯЗАТЕЛЬНО: в самом конце КАЖДОГО ответа добавляй ровно одну служебную строку формата ' +
