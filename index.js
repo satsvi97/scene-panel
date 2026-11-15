@@ -91,7 +91,7 @@ const WEATHER_STATES = {
 let weatherRendererPromise = null;
 
 // Версия расширения (дублирует manifest.json для отображения в UI)
-const PANEL_VERSION = '0.12.0';
+const PANEL_VERSION = '0.12.1';
 
 // Встроенная разметка панели. Не зависит от внешнего panel.html и его кэша.
 const PANEL_HTML = `<div class="scene-panel-slider" id="scene_panel_slider">
@@ -1166,7 +1166,14 @@ function isNarrow() {
 }
 
 function isMobileUi() {
-    return !!getSettings().mobile && isNarrow();
+    if (!getSettings().mobile) return false;
+    // узкий экран ИЛИ сенсорный ввод (планшеты, телефоны)
+    if (isNarrow()) return true;
+    try {
+        return window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    } catch (e) {
+        return false;
+    }
 }
 
 // Показывать FAB только в мобильном режиме
@@ -1205,7 +1212,12 @@ function applyMessFabPos() {
 function applyMobileMode() {
     const on = isMobileUi();
     document.body.classList.toggle('sp-mobile', on);
-    $('#scene_panel_fab').toggle(on);
+    // НЕ .toggle(): он пишет inline display и ломает CSS (flex-центрирование)
+    const $fab = $('#scene_panel_fab');
+    if ($fab.length) {
+        $fab.attr('aria-hidden', on ? 'false' : 'true');
+        $fab.css('display', on ? 'flex' : 'none');
+    }
     const $float = $('#scene_panel_float');
     if ($float.length) {
         if (on) {
@@ -2014,6 +2026,9 @@ jQuery(async () => {
         });
 
         console.log('[scene-panel] ready');
+        if (getSettings().debug) {
+            console.debug('[scene-panel] mobile ui =', isMobileUi(), { mobile: getSettings().mobile, w: window.innerWidth });
+        }
     } catch (e) {
         console.error('[scene-panel] init failed', e);
     }
