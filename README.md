@@ -6,7 +6,7 @@
 
 📖 [Документация / Documentation](docs/DOCUMENTATION.md) · 🧪 [План тестирования / Test plan](docs/TESTPLAN.md)
 
-![version](https://img.shields.io/badge/version-0.11.2-b8b8ff?style=flat-square)
+![version](https://img.shields.io/badge/version-0.11.3-b8b8ff?style=flat-square)
 ![license](https://img.shields.io/badge/license-MIT-a99bf5?style=flat-square)
 ![platform](https://img.shields.io/badge/SillyTavern-extension-7c6ee0?style=flat-square)
 
@@ -150,11 +150,12 @@ SillyTavern/public/scripts/extensions/third-party/scene-panel
 
 ### 🛠 Если что-то пошло не так
 
-- **Не видно обновления?** Проверьте версию — она написана **в правом нижнем углу панели** (`v0.11.2`). Затем `Ctrl+F5` и перезапуск таверны.
+- **Не видно обновления?** Проверьте версию — она написана **в правом нижнем углу панели** (`v0.11.3`). Затем `Ctrl+F5` и перезапуск таверны.
 - **Ошибка `Need to specify how to reconcile divergent branches` при обновлении.** История git разошлась: удалите расширение и установите заново по URL.
 - **Панель открылась «не той» разметкой.** Жёсткое обновление (`Ctrl+F5`); при повторе — переустановка.
 - **Погода не меняет фон.** Проверьте, что Weather Background включён и в его настройках не стоит «постоянный эффект none».
-- **ИИ не присылает тег?** Откройте панель → блок **🩺 Диагностика**: там видно, сколько сообщений и тегов поймано. Нажмите **«тест: пример тега»** — так проверяется панель без участия модели. Если в счётчике тегов нули, включите **«🐞 отладка в консоль»** и посмотрите `[scene-panel]`, а затем **«скопировать инструкцию»** и вставьте её в **Author's Note** — некоторые модели игнорируют инжект. Тег понимается в вариантах `[[scene: …]]`, `[scene: …]`, `<scene>…</scene>`.
+- **ИИ не присылает тег?** Откройте панель → блок **🩺 Диагностика**: там видно, сколько сообщений и тегов поймано. Нажмите **«тест: пример тега»** — так проверяется панель без участия модели. Если в счётчике тегов нули, включите **«🐞 отладка в консоль»** и посмотрите `[scene-panel]`, а затем **«скопировать инструкцию»** и вставьте её в **Author's Note** — некоторые модели игнорируют инжект. Тег понимается в вариантах `[[scene: …]]`, `[scene: …]`, `<scene>…</scene>`, а маркер может быть `scene`, `сцена` или `scen`.
+- **День откатился на 1?** Обычно это старая копия промпта в **Author's Note** со строкой «Сцена: день 1…». Удалите её: кнопка «скопировать инструкцию» теперь копирует **только требование тега**, без состояния. Плюс включена защита — тег не может уменьшить день, пока не включён флажок **«разрешать откат дня назад»**.
 
 ### 🐞 Баги и идеи
 
@@ -319,11 +320,12 @@ SillyTavern/public/scripts/extensions/third-party/scene-panel
 
 ### 🛠 Якщо щось пішло не так
 
-- **Не видно оновлення?** Перевірте версію — вона написана **в правому нижньому куті панелі** (`v0.11.2`). Потім `Ctrl+F5` і перезапуск таверни.
+- **Не видно оновлення?** Перевірте версію — вона написана **в правому нижньому куті панелі** (`v0.11.3`). Потім `Ctrl+F5` і перезапуск таверни.
 - **Помилка `Need to specify how to reconcile divergent branches` під час оновлення.** Історія git розійшлася: видаліть розширення й встановіть заново за URL.
 - **Панель відкрилася «не тією» розміткою.** Жорстке оновлення (`Ctrl+F5`); якщо повторюється — перевстановлення.
 - **Погода не змінює фон.** Перевірте, що Weather Background увімкнено і в його налаштуваннях не стоїть «постійний ефект none».
-- **ШІ не надсилає тег?** Відкрийте панель → блок **🩺 Діагностика**: там видно, скільки повідомлень і тегів упіймано. Натисніть **«тест: приклад тегу»** — так перевіряється панель без участі моделі. Якщо лічильник тегів нульовий, увімкніть **«🐞 відлагодження в консоль»** і подивіться `[scene-panel]`, потім **«скопіювати інструкцію»** і вставте її в **Author's Note** — деякі моделі ігнорують інжект. Тег розуміється у варіантах `[[scene: …]]`, `[scene: …]`, `<scene>…</scene>`.
+- **ШІ не надсилає тег?** Відкрийте панель → блок **🩺 Діагностика**: там видно, скільки повідомлень і тегів упіймано. Натисніть **«тест: приклад тегу»** — так перевіряється панель без участі моделі. Якщо лічильник тегів нульовий, увімкніть **«🐞 відлагодження в консоль»** і подивіться `[scene-panel]`, потім **«скопіювати інструкцію»** і вставте її в **Author's Note** — деякі моделі ігнорують інжект. Тег розуміється у варіантах `[[scene: …]]`, `[scene: …]`, `<scene>…</scene>`, а маркер може бути `scene`, `сцена` або `scen`.
+- **День відкотився на 1?** Зазвичай це стара копія промпту в **Author's Note** зі рядком «Сцена: день 1…». Видаліть її: кнопка «скопіювати інструкцію» тепер копіює **лише вимогу до тегу**, без стану. До того ж увімкнено захист — тег не може зменшити день, поки не позначено **«дозволяти відкат дня назад»**.
 
 ### 🐞 Баги та ідеї
 
@@ -488,11 +490,12 @@ Varje chatt har sin egen scen, historik och statistik.
 
 ### 🛠 Felsökning
 
-- **Ingen uppdatering syns?** Kontrollera versionen **i panelens nedre högra hörn** (`v0.11.2`), kör sedan `Ctrl+F5` och starta om tavernan.
+- **Ingen uppdatering syns?** Kontrollera versionen **i panelens nedre högra hörn** (`v0.11.3`), kör sedan `Ctrl+F5` och starta om tavernan.
 - **`Need to specify how to reconcile divergent branches` vid uppdatering.** Git-historiken har divergerat: ta bort tillägget och installera om via URL.
 - **Panelen öppnades med fel layout.** Hård uppdatering (`Ctrl+F5`); upprepas det — installera om.
 - **Vädret ändrar inte bakgrunden.** Kontrollera att Weather Background är aktiverat och att dess "permanent effekt" inte är satt till none.
-- **AI:n skickar ingen tagg?** Öppna panelen → blocket **🩺 Diagnostik**: där syns hur många meddelanden och taggar som fångats. Tryck **«test: exempeltagg»** för att testa panelen utan modellen. Om taggräknaren är noll, slå på **«🐞 konsolldebug»** och titta på `[scene-panel]`, tryck sedan **«kopiera instruktionen»** och klistra in den i **Author's Note** — vissa modeller ignorerar injektionen. Taggen känns igen som `[[scene: …]]`, `[scene: …]`, `<scene>…</scene>`.
+- **AI:n skickar ingen tagg?** Öppna panelen → blocket **🩺 Diagnostik**: där syns hur många meddelanden och taggar som fångats. Tryck **«test: exempeltagg»** för att testa panelen utan modellen. Om taggräknaren är noll, slå på **«🐞 konsolldebug»** och titta på `[scene-panel]`, tryck sedan **«kopiera instruktionen»** och klistra in den i **Author's Note** — vissa modeller ignorerar injektionen. Taggen känns igen som `[[scene: …]]`, `[scene: …]`, `<scene>…</scene>`, och markören kan vara `scene`, `сцена` eller `scen`.
+- **Dagen hoppade tillbaka till 1?** Oftast är det en gammal promptkopia i **Author's Note** med raden «Сцена: день 1…». Ta bort den: knappen «kopiera instruktionen» kopierar nu **bara taggkravet**, utan tillstånd. Dessutom finns ett skydd — taggen kan inte minska dagen om inte **«tillåt att dagen går bakåt»** är ikryssad.
 
 ### 🐞 Buggar och idéer
 
@@ -657,11 +660,12 @@ Each chat has its own scene, history and statistics.
 
 ### 🛠 Troubleshooting
 
-- **No update visible?** Check the version shown **in the bottom-right corner of the panel** (`v0.11.2`), then `Ctrl+F5` and restart the tavern.
+- **No update visible?** Check the version shown **in the bottom-right corner of the panel** (`v0.11.3`), then `Ctrl+F5` and restart the tavern.
 - **`Need to specify how to reconcile divergent branches` on update.** The git history diverged: delete the extension and reinstall it via URL.
 - **Panel opened with the wrong layout.** Hard refresh (`Ctrl+F5`); if it repeats — reinstall.
 - **Weather doesn't change the background.** Make sure Weather Background is enabled and its "permanent effect" is not set to none.
-- **The AI never sends a tag?** Open the panel → **🩺 Diagnostics**: it shows how many messages and tags were captured. Press **"test: sample tag"** to verify the panel without the model. If the tag counter stays at zero, enable **"🐞 console debug"** and check `[scene-panel]`, then **"copy instruction"** and paste it into **Author's Note** — some models ignore injections. The tag is recognized as `[[scene: …]]`, `[scene: …]`, `<scene>…</scene>`.
+- **The AI never sends a tag?** Open the panel → **🩺 Diagnostics**: it shows how many messages and tags were captured. Press **"test: sample tag"** to verify the panel without the model. If the tag counter stays at zero, enable **"🐞 console debug"** and check `[scene-panel]`, then **"copy instruction"** and paste it into **Author's Note** — some models ignore injections. The tag is recognized as `[[scene: …]]`, `[scene: …]`, `<scene>…</scene>`, and the marker may be `scene`, `сцена` or `scen`.
+- **The day jumped back to 1?** Usually it's a stale prompt copy in **Author's Note** with the line «Сцена: день 1…». Delete it: the "copy instruction" button now copies **only the tag requirement**, without state. On top of that, a guard is on — a tag cannot lower the day unless **"allow rolling the day back"** is checked.
 
 ### 🐞 Bugs & ideas
 

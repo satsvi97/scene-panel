@@ -91,7 +91,7 @@ const WEATHER_STATES = {
 let weatherRendererPromise = null;
 
 // Версия расширения (дублирует manifest.json для отображения в UI)
-const PANEL_VERSION = '0.11.2';
+const PANEL_VERSION = '0.11.3';
 
 // Встроенная разметка панели. Не зависит от внешнего panel.html и его кэша.
 const PANEL_HTML = `<div class="scene-panel-slider" id="scene_panel_slider">
@@ -217,6 +217,10 @@ const PANEL_HTML = `<div class="scene-panel-slider" id="scene_panel_slider">
         <input type="checkbox" id="scene_panel_debug">
         <span data-sp-i18n="debug">🐞 отладка в консоль</span>
     </label>
+    <label class="checkbox_label scene-panel-check">
+        <input type="checkbox" id="scene_panel_day_rollback">
+        <span data-sp-i18n="dayRollback">разрешать откат дня назад</span>
+    </label>
 
     <div class="scene-panel-credit">by ✦ Selena's Tavern ✦</div>
     <div class="scene-panel-version">v${PANEL_VERSION}</div>
@@ -282,7 +286,8 @@ const I18N = {
         lastTag: 'последний тег: {tag}',
         testTagBtn: 'тест: пример тега', copyBtn: 'скопировать инструкцию',
         testApplied: '✅ Пример тега применён — панель работает.',
-        copyOk: '✅ Инструкция скопирована — вставьте её в Author\'s Note, если модель игнорирует инжект.',
+        copyOk: '✅ Скопирована только инструкция (без строки состояния) — вставьте в Author\'s Note.',
+        dayRollback: 'разрешать откат дня назад',
         copyFail: '⚠️ Не удалось скопировать. Текст инструкции выведен в консоль.',
         debug: '🐞 отладка в консоль',
         slideScene: 'сцена', slideStats: 'статистика',
@@ -324,7 +329,8 @@ const I18N = {
         lastTag: 'last tag: {tag}',
         testTagBtn: 'test: sample tag', copyBtn: 'copy instruction',
         testApplied: '✅ Sample tag applied — the panel works.',
-        copyOk: '✅ Instruction copied — paste it into Author\'s Note if the model ignores the injection.',
+        copyOk: '✅ Instruction copied (without the state line) — paste it into Author\'s Note.',
+        dayRollback: 'allow rolling the day back',
         copyFail: '⚠️ Copy failed. The instruction text was printed to the console.',
         debug: '🐞 console debug',
         slideScene: 'scene', slideStats: 'statistics',
@@ -366,7 +372,8 @@ const I18N = {
         lastTag: 'останній тег: {tag}',
         testTagBtn: 'тест: приклад тегу', copyBtn: 'скопіювати інструкцію',
         testApplied: '✅ Приклад тегу застосовано — панель працює.',
-        copyOk: '✅ Інструкцію скопійовано — вставте її в Author\'s Note, якщо модель ігнорує інжект.',
+        copyOk: '✅ Скопійовано лише інструкцію (без рядка стану) — вставте в Author\'s Note.',
+        dayRollback: 'дозволяти відкат дня назад',
         copyFail: '⚠️ Не вдалося скопіювати. Текст інструкції виведено в консоль.',
         debug: '🐞 відлагодження в консоль',
         slideScene: 'сцена', slideStats: 'статистика',
@@ -408,7 +415,8 @@ const I18N = {
         lastTag: 'senaste tagg: {tag}',
         testTagBtn: 'test: exempeltagg', copyBtn: 'kopiera instruktionen',
         testApplied: '✅ Exempeltaggen tillämpad — panelen fungerar.',
-        copyOk: '✅ Instruktionen kopierad — klistra in den i Author\'s Note om modellen ignorerar injektionen.',
+        copyOk: '✅ Endast instruktionen kopierades (utan tillståndsraden) — klistra in den i Author\'s Note.',
+        dayRollback: 'tillåt att dagen går bakåt',
         copyFail: '⚠️ Kunde inte kopiera. Instruktionstexten skrevs ut i konsolen.',
         debug: '🐞 konsolldebug',
         slideScene: 'scen', slideStats: 'statistik',
@@ -507,7 +515,7 @@ function emptyState() {
 
 function getSettings() {
     if (!extension_settings[MODULE] || typeof extension_settings[MODULE] !== 'object') {
-        extension_settings[MODULE] = { enabled: true, inject: true, role: 'system', floating: true, floatPos: null, weatherIntegration: true, theme: 'auto', lang: 'ru', debug: false };
+        extension_settings[MODULE] = { enabled: true, inject: true, role: 'system', floating: true, floatPos: null, weatherIntegration: true, theme: 'auto', lang: 'ru', debug: false, allowDayRollback: false };
     }
     const s = extension_settings[MODULE];
     if (typeof s.enabled !== 'boolean') s.enabled = true;
@@ -518,6 +526,7 @@ function getSettings() {
     if (typeof s.theme !== 'string') s.theme = 'auto';
     if (!LANGS.includes(s.lang)) s.lang = 'ru';
     if (typeof s.debug !== 'boolean') s.debug = false;
+    if (typeof s.allowDayRollback !== 'boolean') s.allowDayRollback = false;
     return s;
 }
 
@@ -631,9 +640,12 @@ function sceneText(state) {
     if (customKeys.length > 0) {
         parts.push('доп: ' + customKeys.map((k) => k + '=' + state.custom[k]).join('; '));
     }
-    return parts.join('. ') + '. ' +
-        'Это текущее состояние сцены. ' +
-        'ОБЯЗАТЕЛЬНО: в самом конце КАЖДОГО ответа добавляй ровно одну служебную строку формата ' +
+    return parts.join('. ') + '. Это текущее состояние сцены. ' + sceneInstructionText();
+}
+
+// Только требование к формату — без состояния сцены (для Author's Note)
+function sceneInstructionText() {
+    return 'ОБЯЗАТЕЛЬНО: в самом конце КАЖДОГО ответа добавляй ровно одну служебную строку формата ' +
         '[[scene: место=…; время=…; рядом=…; висит=…; тон=…; погода=…]], подставив актуальные значения. ' +
         'Если ничего не изменилось — просто повтори текущие значения. ' +
         'Не упоминай эту строку в тексте ответа и не оборачивай её в блок кода.';
@@ -722,6 +734,7 @@ function refresh() {
         $panel.find('#scene_panel_role').val(getSettings().role);
         $panel.find('#scene_panel_weather_integration').prop('checked', getSettings().weatherIntegration);
         $panel.find('#scene_panel_debug').prop('checked', !!getSettings().debug);
+        $panel.find('#scene_panel_day_rollback').prop('checked', !!getSettings().allowDayRollback);
         $panel.find('#scene_panel_theme').val(getSettings().theme);
         $panel.find('#scene_panel_elapsed_display').text(elapsedTimeString(state));
         const customText = Object.entries(state.custom || {}).map(([k, v]) => k + '=' + v).join('\n');
@@ -835,7 +848,16 @@ function parseTag(body) {
                 out.day = state.day + 1;
             } else {
                 const n = parseInt(value, 10);
-                if (Number.isFinite(n) && n > 0) out.day = n;
+                if (Number.isFinite(n) && n > 0) {
+                    // Защита от отката дня назад из устаревшего Author's Note
+                    if (n < state.day && !getSettings().allowDayRollback) {
+                        if (getSettings().debug) {
+                            console.debug('[scene-panel] откат дня проигнорирован:', n, '<', state.day);
+                        }
+                    } else {
+                        out.day = n;
+                    }
+                }
             }
             continue;
         }
@@ -1599,6 +1621,15 @@ function bindEvents() {
         console.debug('[scene-panel] debug =', getSettings().debug);
     });
 
+    $panel.on('change', '#scene_panel_day_rollback', (e) => {
+        getSettings().allowDayRollback = !!e.target.checked;
+        try {
+            saveSettings();
+        } catch (err) {
+            /* ignore */
+        }
+    });
+
     // Тест пайплайна: применяет пример тега без участия модели
     $panel.on('click', '#scene_panel_test_tag', () => {
         const sample = parseTag('день=+1; место=Тестовый зал; время=вечер; рядом=Тестовый персонаж; висит=проверка панели; погода=ясно; тон=спокойствие');
@@ -1616,9 +1647,9 @@ function bindEvents() {
         $('#scene_panel_diag_result').text(t('testApplied'));
     });
 
-    // Копирует текущую инструкцию для вставки в Author's Note, если модель игнорирует инжект
+    // Копирует ТОЛЬКО инструкцию (без состояния сцены), чтобы Author's Note не «замораживал» день
     $panel.on('click', '#scene_panel_copy_prompt', async () => {
-        const text = sceneText(getState());
+        const text = sceneInstructionText();
         try {
             await navigator.clipboard.writeText(text);
             $('#scene_panel_diag_result').text(t('copyOk'));
