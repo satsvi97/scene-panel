@@ -972,6 +972,18 @@
     display: none;
 }
 
+/* короткий статус диагностики */
+.scene-panel-status {
+    font-size: 0.78em;
+    opacity: 0.8;
+    margin-bottom: 2px;
+}
+
+.scene-panel-modal[data-sp-theme="light"] .scene-panel-status {
+    color: #4a3f78;
+    opacity: 0.9;
+}
+
 /* ---- светлая тема панели ---- */
 
 .scene-panel-modal[data-sp-theme="light"] {

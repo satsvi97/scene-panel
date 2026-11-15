@@ -19,7 +19,42 @@ import {
 const MODULE = 'scene_panel';
 const EXT_NAME = 'third-party/scene-panel';
 const PROMPT_KEY = 'SCENE_PANEL';
-const TAG_RE = /\[\[\s*scene\s*:\s*([\s\S]*?)\]\]/i;
+
+// Поддерживаем несколько вариантов служебного тега — модели любят своевольничать
+const TAG_PATTERNS = [
+    /\[\[\s*scene\s*:\s*([\s\S]*?)\]\]/i,          // [[scene: …]]
+    /\[\[\s*scene\s*[=:]\s*([\s\S]*?)\]\]/i,       // [[scene=…]]
+    /<\s*scene\s*>([\s\S]*?)<\s*\/\s*scene\s*>/i,  // <scene>…</scene>
+    /\[\s*scene\s*:\s*([^\]\n]*)\]/i,              // [scene: …]
+    /\[\s*scene\s*[=:]\s*([^\]\n]*)\]/i,           // [scene=…]
+];
+// Диагностические счётчики (живут до перезагрузки страницы)
+let msgSeen = 0;
+let tagSeen = 0;
+let lastTagPreview = '';
+let lastTagPattern = -1;
+
+// Ищет служебный тег в тексте сообщения (несколько поддерживаемых вариантов)
+function findSceneTag(text) {
+    if (typeof text !== 'string' || !text) return null;
+    for (let i = 0; i < TAG_PATTERNS.length; i += 1) {
+        const m = text.match(TAG_PATTERNS[i]);
+        if (m && typeof m[1] === 'string') {
+            return { index: i, match: m[0], body: m[1] };
+        }
+    }
+    return null;
+}
+
+// Удаляет тег и подчищает опустевшие блоки кода / лишние пустые строки
+function stripSceneTag(text, tag) {
+    let out = text.replace(tag.match, '');
+    out = out.replace(/```[a-zA-Z0-9_-]*[ \t]*\n?[ \t]*\n?```/g, '');
+    out = out.replace(/[ \t]+\n/g, '\n');
+    out = out.replace(/\n{3,}/g, '\n\n');
+    return out.trimEnd();
+}
+
 const MIN_MONTH = 5;
 const MAX_MONTH = 60;
 
@@ -53,7 +88,7 @@ const WEATHER_STATES = {
 let weatherRendererPromise = null;
 
 // Версия расширения (дублирует manifest.json для отображения в UI)
-const PANEL_VERSION = '0.10.2';
+const PANEL_VERSION = '0.11.0';
 
 // Встроенная разметка панели. Не зависит от внешнего panel.html и его кэша.
 const PANEL_HTML = `<div class="scene-panel-slider" id="scene_panel_slider">
@@ -136,9 +171,14 @@ const PANEL_HTML = `<div class="scene-panel-slider" id="scene_panel_slider">
 
     <div class="scene-panel-field">
         <span data-sp-i18n="diag">🩺 Диагностика</span>
+        <div id="scene_panel_status" class="scene-panel-stats scene-panel-status"></div>
         <div class="scene-panel-actions scene-panel-actions-row">
             <div class="menu_button" id="scene_panel_diag" data-sp-i18n="diagBtn">проверить и восстановить</div>
             <div class="menu_button" id="scene_panel_reset" data-sp-i18n="reset">сбросить</div>
+        </div>
+        <div class="scene-panel-actions scene-panel-actions-row">
+            <div class="menu_button" id="scene_panel_test_tag" data-sp-i18n="testTagBtn">тест: пример тега</div>
+            <div class="menu_button" id="scene_panel_copy_prompt" data-sp-i18n="copyBtn">скопировать инструкцию</div>
         </div>
         <div id="scene_panel_diag_result" class="scene-panel-hint"></div>
     </div>
@@ -169,6 +209,10 @@ const PANEL_HTML = `<div class="scene-panel-slider" id="scene_panel_slider">
     <label class="checkbox_label scene-panel-check">
         <input type="checkbox" id="scene_panel_weather_integration">
         <span data-sp-i18n="wb">🌦 фон погоды (Weather Background)</span>
+    </label>
+    <label class="checkbox_label scene-panel-check">
+        <input type="checkbox" id="scene_panel_debug">
+        <span data-sp-i18n="debug">🐞 отладка в консоль</span>
     </label>
 
     <div class="scene-panel-credit">by ✦ Selena's Tavern ✦</div>
@@ -230,6 +274,14 @@ const I18N = {
         diagFromTag: '✅ Восстановлено из тега сообщения #{n}.',
         diagFromSnap: '✅ Восстановлено из снимка ({time}).',
         diagNothing: '⚠️ Нечего восстанавливать: тегов и снимков нет.',
+        diagStatus: 'инжект: {inject} · роль: {role} · сообщений: {msgs} · тегов: {tags}',
+        stOn: 'вкл', stOff: 'выкл',
+        lastTag: 'последний тег: {tag}',
+        testTagBtn: 'тест: пример тега', copyBtn: 'скопировать инструкцию',
+        testApplied: '✅ Пример тега применён — панель работает.',
+        copyOk: '✅ Инструкция скопирована — вставьте её в Author\'s Note, если модель игнорирует инжект.',
+        copyFail: '⚠️ Не удалось скопировать. Текст инструкции выведен в консоль.',
+        debug: '🐞 отладка в консоль',
         slideScene: 'сцена', slideStats: 'статистика',
         enabled: 'расширение включено', openPanel: 'открыть панель сцены',
         drawerHint: 'Календарь, место, состав сцены и открытые нити. ИИ обновляет их тегом <code>[[scene: …]]</code> в конце ответа.<br>Свайп влево — статистика. Alt+Shift+S — открыть панель.',
@@ -264,6 +316,14 @@ const I18N = {
         diagFromTag: '✅ Restored from tag in message #{n}.',
         diagFromSnap: '✅ Restored from snapshot ({time}).',
         diagNothing: '⚠️ Nothing to restore: no tags and no snapshots.',
+        diagStatus: 'inject: {inject} · role: {role} · messages: {msgs} · tags: {tags}',
+        stOn: 'on', stOff: 'off',
+        lastTag: 'last tag: {tag}',
+        testTagBtn: 'test: sample tag', copyBtn: 'copy instruction',
+        testApplied: '✅ Sample tag applied — the panel works.',
+        copyOk: '✅ Instruction copied — paste it into Author\'s Note if the model ignores the injection.',
+        copyFail: '⚠️ Copy failed. The instruction text was printed to the console.',
+        debug: '🐞 console debug',
         slideScene: 'scene', slideStats: 'statistics',
         enabled: 'extension enabled', openPanel: 'open scene panel',
         drawerHint: 'Calendar, place, scene cast and open threads. The AI updates them with a <code>[[scene: …]]</code> tag at the end of a reply.<br>Swipe left for statistics. Alt+Shift+S opens the panel.',
@@ -298,6 +358,14 @@ const I18N = {
         diagFromTag: '✅ Відновлено з тегу повідомлення #{n}.',
         diagFromSnap: '✅ Відновлено зі знімка ({time}).',
         diagNothing: '⚠️ Немає чого відновлювати: тегів і знімків немає.',
+        diagStatus: 'інжект: {inject} · роль: {role} · повідомлень: {msgs} · тегів: {tags}',
+        stOn: 'увімк', stOff: 'вимк',
+        lastTag: 'останній тег: {tag}',
+        testTagBtn: 'тест: приклад тегу', copyBtn: 'скопіювати інструкцію',
+        testApplied: '✅ Приклад тегу застосовано — панель працює.',
+        copyOk: '✅ Інструкцію скопійовано — вставте її в Author\'s Note, якщо модель ігнорує інжект.',
+        copyFail: '⚠️ Не вдалося скопіювати. Текст інструкції виведено в консоль.',
+        debug: '🐞 відлагодження в консоль',
         slideScene: 'сцена', slideStats: 'статистика',
         enabled: 'розширення увімкнено', openPanel: 'відкрити панель сцени',
         drawerHint: 'Календар, місце, склад сцени та відкриті нитки. ШІ оновлює їх тегом <code>[[scene: …]]</code> наприкінці відповіді.<br>Свайп вліво — статистика. Alt+Shift+S — відкрити панель.',
@@ -332,6 +400,14 @@ const I18N = {
         diagFromTag: '✅ Återställt från tagg i meddelande #{n}.',
         diagFromSnap: '✅ Återställt från ögonblicksbild ({time}).',
         diagNothing: '⚠️ Inget att återställa: inga taggar och inga ögonblicksbilder.',
+        diagStatus: 'injektion: {inject} · roll: {role} · meddelanden: {msgs} · taggar: {tags}',
+        stOn: 'på', stOff: 'av',
+        lastTag: 'senaste tagg: {tag}',
+        testTagBtn: 'test: exempeltagg', copyBtn: 'kopiera instruktionen',
+        testApplied: '✅ Exempeltaggen tillämpad — panelen fungerar.',
+        copyOk: '✅ Instruktionen kopierad — klistra in den i Author\'s Note om modellen ignorerar injektionen.',
+        copyFail: '⚠️ Kunde inte kopiera. Instruktionstexten skrevs ut i konsolen.',
+        debug: '🐞 konsolldebug',
         slideScene: 'scen', slideStats: 'statistik',
         enabled: 'tillägget aktiverat', openPanel: 'öppna scenpanelen',
         drawerHint: 'Kalender, plats, scenens sällskap och öppna trådar. AI:n uppdaterar dem med en <code>[[scene: …]]</code>-tagg i slutet av svaret.<br>Svep vänster för statistik. Alt+Shift+S öppnar panelen.',
@@ -428,7 +504,7 @@ function emptyState() {
 
 function getSettings() {
     if (!extension_settings[MODULE] || typeof extension_settings[MODULE] !== 'object') {
-        extension_settings[MODULE] = { enabled: true, inject: true, role: 'system', floating: true, floatPos: null, weatherIntegration: true, theme: 'auto', lang: 'ru' };
+        extension_settings[MODULE] = { enabled: true, inject: true, role: 'system', floating: true, floatPos: null, weatherIntegration: true, theme: 'auto', lang: 'ru', debug: false };
     }
     const s = extension_settings[MODULE];
     if (typeof s.enabled !== 'boolean') s.enabled = true;
@@ -438,6 +514,7 @@ function getSettings() {
     if (typeof s.weatherIntegration !== 'boolean') s.weatherIntegration = true;
     if (typeof s.theme !== 'string') s.theme = 'auto';
     if (!LANGS.includes(s.lang)) s.lang = 'ru';
+    if (typeof s.debug !== 'boolean') s.debug = false;
     return s;
 }
 
@@ -553,9 +630,11 @@ function sceneText(state) {
     }
     parts.push('время сессии: ' + elapsedTimeString(state));
     return parts.join('. ') + '. ' +
-        'Это текущее состояние сцены. Если в твоём ответе меняются место, время, состав сцены, ' +
-        'закрываются или появляются нити — добавь в самом конце ответа ровно одну строку ' +
-        '[[scene: место=…; время=…; рядом=…; висит=…; тон=…; погода=…]] и не упоминай её в тексте.';
+        'Это текущее состояние сцены. ' +
+        'ОБЯЗАТЕЛЬНО: в самом конце КАЖДОГО ответа добавляй ровно одну служебную строку формата ' +
+        '[[scene: место=…; время=…; рядом=…; висит=…; тон=…; погода=…]], подставив актуальные значения. ' +
+        'Если ничего не изменилось — просто повтори текущие значения. ' +
+        'Не упоминай эту строку в тексте ответа и не оборачивай её в блок кода.';
 }
 
 function injectionRole() {
@@ -640,12 +719,14 @@ function refresh() {
         $panel.find('#scene_panel_floating').prop('checked', getSettings().floating);
         $panel.find('#scene_panel_role').val(getSettings().role);
         $panel.find('#scene_panel_weather_integration').prop('checked', getSettings().weatherIntegration);
+        $panel.find('#scene_panel_debug').prop('checked', !!getSettings().debug);
         $panel.find('#scene_panel_theme').val(getSettings().theme);
         $panel.find('#scene_panel_elapsed_display').text(elapsedTimeString(state));
         const customText = Object.entries(state.custom || {}).map(([k, v]) => k + '=' + v).join('\n');
         $panel.find('#scene_panel_custom').val(customText);
         renderCalendar('scene_panel_cal');
         renderStats();
+        renderStatus();
         renderCharHints();
         renderTimeHints();
     }
@@ -767,9 +848,26 @@ function handleMessage(messageId) {
         if (!isEnabled()) return;
         const message = getContext().chat?.[messageId];
         if (!message || typeof message.mes !== 'string') return;
-        const match = message.mes.match(TAG_RE);
-        if (!match) return;
-        const patch = parseTag(match[1]);
+
+        msgSeen += 1;
+        renderStatus();
+
+        const tag = findSceneTag(message.mes);
+        if (!tag) {
+            if (getSettings().debug) {
+                console.debug('[scene-panel] тег не найден в сообщении #' + messageId, {
+                    length: message.mes.length,
+                    tail: message.mes.slice(-160),
+                });
+            }
+            return;
+        }
+
+        tagSeen += 1;
+        lastTagPreview = tag.body.slice(0, 120);
+        lastTagPattern = tag.index;
+
+        const patch = parseTag(tag.body);
         if (patch && patch.custom) {
             Object.assign(getState().custom, patch.custom);
             delete patch.custom;
@@ -777,7 +875,12 @@ function handleMessage(messageId) {
         if (Object.keys(patch).length > 0) {
             Object.assign(getState(), patch);
         }
-        message.mes = message.mes.replace(TAG_RE, '').replace(/\s+$/, '');
+
+        if (getSettings().debug) {
+            console.debug('[scene-panel] тег найден', { pattern: tag.index, patch });
+        }
+
+        message.mes = stripSceneTag(message.mes, tag);
         updateMessageBlock(messageId, message, { rerenderMessage: true });
         commit();
         recordSnapshot();
@@ -944,6 +1047,22 @@ function topList(obj, limit = 3) {
         .filter(([, v]) => Number(v) > 0)
         .sort((a, b) => b[1] - a[1])
         .slice(0, limit);
+}
+
+// Короткий статус: включён ли инжект, сколько сообщений видели, сколько тегов поймали
+function renderStatus() {
+    const $box = $('#scene_panel_status');
+    if ($box.length === 0) return;
+    const s = getSettings();
+    const last = lastTagPreview ? tf('lastTag', { tag: lastTagPreview }) : tf('lastTag', { tag: '—' });
+    $box.empty();
+    $box.append($('<div>').text(tf('diagStatus', {
+        inject: s.inject ? t('stOn') : t('stOff'),
+        role: s.role,
+        msgs: msgSeen,
+        tags: tagSeen,
+    })));
+    $box.append($('<div>').text(last));
 }
 
 function renderStats() {
@@ -1170,6 +1289,7 @@ function runDiagnostics() {
     }
 
     $out.text(lines.join(' '));
+    renderStatus();
 }
 
 // Переводит свободный текст погоды в состояние Weather Background.
@@ -1458,6 +1578,45 @@ function bindEvents() {
             /* ignore */
         }
         applyTheme();
+    });
+
+    $panel.on('change', '#scene_panel_debug', (e) => {
+        getSettings().debug = !!e.target.checked;
+        try {
+            saveSettings();
+        } catch (err) {
+            /* ignore */
+        }
+        console.debug('[scene-panel] debug =', getSettings().debug);
+    });
+
+    // Тест пайплайна: применяет пример тега без участия модели
+    $panel.on('click', '#scene_panel_test_tag', () => {
+        const sample = parseTag('день=+1; место=Тестовый зал; время=вечер; рядом=Тестовый персонаж; висит=проверка панели; погода=ясно; тон=спокойствие');
+        if (sample && sample.custom) {
+            Object.assign(getState().custom, sample.custom);
+            delete sample.custom;
+        }
+        if (sample) Object.assign(getState(), sample);
+        commit();
+        recordSnapshot();
+        trackStats(getState());
+        syncPrompt();
+        refresh();
+        applyWeatherEffect();
+        $('#scene_panel_diag_result').text(t('testApplied'));
+    });
+
+    // Копирует текущую инструкцию для вставки в Author's Note, если модель игнорирует инжект
+    $panel.on('click', '#scene_panel_copy_prompt', async () => {
+        const text = sceneText(getState());
+        try {
+            await navigator.clipboard.writeText(text);
+            $('#scene_panel_diag_result').text(t('copyOk'));
+        } catch (err) {
+            console.log('[scene-panel] instruction:\n' + text);
+            $('#scene_panel_diag_result').text(t('copyFail'));
+        }
     });
 
     $('#scene_panel_modal').on('click', '#scene_panel_stats_refresh', () => renderStats());
