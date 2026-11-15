@@ -20,13 +20,16 @@ const MODULE = 'scene_panel';
 const EXT_NAME = 'third-party/scene-panel';
 const PROMPT_KEY = 'SCENE_PANEL';
 
+// Слово-маркер тега: английское, русское или шведское
+const SCENE_WORD = '(?:scene|сцена|scen)';
+
 // Поддерживаем несколько вариантов служебного тега — модели любят своевольничать
 const TAG_PATTERNS = [
-    /\[\[\s*scene\s*:\s*([\s\S]*?)\]\]/i,          // [[scene: …]]
-    /\[\[\s*scene\s*[=:]\s*([\s\S]*?)\]\]/i,       // [[scene=…]]
-    /<\s*scene\s*>([\s\S]*?)<\s*\/\s*scene\s*>/i,  // <scene>…</scene>
-    /\[\s*scene\s*:\s*([^\]\n]*)\]/i,              // [scene: …]
-    /\[\s*scene\s*[=:]\s*([^\]\n]*)\]/i,           // [scene=…]
+    new RegExp(`\\[\\[\\s*${SCENE_WORD}\\s*:\\s*([\\s\\S]*?)\\]\\]`, 'i'),        // [[scene: …]] / [[сцена: …]]
+    new RegExp(`\\[\\[\\s*${SCENE_WORD}\\s*[=:]\\s*([\\s\\S]*?)\\]\\]`, 'i'),     // [[scene=…]]
+    new RegExp(`<\\s*${SCENE_WORD}\\s*>([\\s\\S]*?)<\\s*\\/\\s*${SCENE_WORD}\\s*>`, 'i'), // <scene>…</scene>
+    new RegExp(`\\[\\s*${SCENE_WORD}\\s*:\\s*([^\\]\\n]*)\\]`, 'i'),              // [scene: …]
+    new RegExp(`\\[\\s*${SCENE_WORD}\\s*[=:]\\s*([^\\]\\n]*)\\]`, 'i'),           // [scene=…]
 ];
 // Диагностические счётчики (живут до перезагрузки страницы)
 let msgSeen = 0;
@@ -88,7 +91,7 @@ const WEATHER_STATES = {
 let weatherRendererPromise = null;
 
 // Версия расширения (дублирует manifest.json для отображения в UI)
-const PANEL_VERSION = '0.11.1';
+const PANEL_VERSION = '0.11.2';
 
 // Встроенная разметка панели. Не зависит от внешнего panel.html и его кэша.
 const PANEL_HTML = `<div class="scene-panel-slider" id="scene_panel_slider">
@@ -797,6 +800,11 @@ function shiftMonth(delta) {
     refresh();
 }
 
+// Значение-заглушка вида «…» или «...» — его нельзя записывать в сцену
+function isPlaceholderValue(value) {
+    return /^[.\u2026\s]+$/.test(value);
+}
+
 function parseTag(body) {
     const out = {};
     const state = getState();
@@ -812,6 +820,8 @@ function parseTag(body) {
         const keyRaw = chunk.slice(0, sep).trim();
         const key = keyRaw.toLowerCase();
         const value = chunk.slice(sep + 1).trim();
+        // Модель скопировала шаблон и оставила «…» — пропускаем такое значение
+        if (isPlaceholderValue(value)) continue;
         const field = KEY_ALIASES[key];
         if (!field) {
             // Произвольные поля: сохраняем как есть (кроме служебного времени сессии)
