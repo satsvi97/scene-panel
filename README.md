@@ -6,7 +6,7 @@
 
 📖 [Документация / Documentation](docs/DOCUMENTATION.md) · 🧪 [План тестирования / Test plan](docs/TESTPLAN.md)
 
-![version](https://img.shields.io/badge/version-0.12.1-b8b8ff?style=flat-square)
+![version](https://img.shields.io/badge/version-0.13.0-b8b8ff?style=flat-square)
 ![license](https://img.shields.io/badge/license-MIT-a99bf5?style=flat-square)
 ![platform](https://img.shields.io/badge/SillyTavern-extension-7c6ee0?style=flat-square)
 
@@ -27,7 +27,7 @@
 | 📅 | **Календарь** | Счётчик дня + название месяца + число дней в месяце (5–60). Клик по дню — переход. |
 | 📍 | **Место** | Свободная строка: «Дворец Ночи, покои Ризанда». |
 | 🕐 | **Время суток** | Свободный текст + быстрые чипы: рассвет · утро · день · вечер · закат · ночь. |
-| 🌦 | **Погода** | Свободный текст; при наличии Weather Background включает фон сцены. |
+| 🌦 | **Погода** | Свободный текст; при наличии Weather Background или Magic Aura включает фон сцены. |
 | 👥 | **Кто рядом** | Список персонажей. Под полем — чипы `＋ Имя` из последних сообщений. |
 | ⚡ | **Открытые нити** | Что висит и ждёт развития (по одной на строку). |
 | 🌫 | **Тон сцены** | Эмоциональная рамка: «хрупкое перемирие», «холодная ярость». |
@@ -108,6 +108,23 @@ SillyTavern/public/scripts/extensions/third-party/scene-panel
 - учитывает настройки самого Weather Background (выключено / мобильный режим);
 - если Weather Background не установлен — панель молча работает без него.
 
+### ✨ Интеграция с Magic Aura
+
+Если установлена [Magic Aura](https://github.com/satsvi97/magic-aura), панель отдаёт ей сцену целиком — погоду, место, время суток и тон, — а Aura сама выбирает небо, частицы и затемнение:
+
+- `weather` → частицы: гроза, дождь, снег, град, метель, облачно, ясно;
+- `place` → облик: пустыня, лес, море, город, храм/комната, сад, сакура, парк, лагерь;
+- `timeOfDay` → небо: ночь → звёзды, рассвет → туман, закат → тёплый свет;
+- `mood` → затемнение сцены.
+
+- включается галочкой **«✨ фон сцены (Magic Aura)»**;
+- сцена меняется сразу по событию панели, без ожидания опроса метаданных;
+- под галочкой видно состояние: синхронизация включена, пауза или Aura не установлена;
+- ручной выбор сцены в Magic Aura (или `/aura`) ставит синхронизацию на паузу — своя картинка всегда главнее; вернуть можно галочкой в панели или «Синхронизация со Scene Panel» в Aura;
+- любую сцену Aura можно назвать прямо в теге: `[[scene: аура=сакура]]`, `аура=торт`, `аура=гроза` (id, имя или слово); поле срабатывает в момент появления, а следующая смена погоды или места снова берёт верх;
+- новые сцены Aura подхватываются сами: панель не знает её каталога, соответствие ищется по словам сцены (`keywords`) — правки в панели не нужны;
+- в Magic Aura ничего не пишется: панель только отдаёт состояние.
+
 ### 🩺 Диагностика и история
 
 - При каждом изменении сцены сохраняется **снимок** (до 20 последних, в `chat_metadata`).
@@ -137,6 +154,7 @@ SillyTavern/public/scripts/extensions/third-party/scene-panel
 | **🎨 тема панели** | `авто` (по фону таверны) / `тёмная` / `светлая`. |
 | **плавающая панель в чате** | Компактная карточка в углу (её можно таскать мышью). |
 | **🌦 фон погоды (Weather Background)** | Связь с расширением погоды. |
+| **✨ фон сцены (Magic Aura)** | Связь с Magic Aura: сцена, частицы и цвет. |
 
 ### 💾 Где хранятся данные
 
@@ -151,7 +169,7 @@ SillyTavern/public/scripts/extensions/third-party/scene-panel
 
 ### 🛠 Если что-то пошло не так
 
-- **Не видно обновления?** Проверьте версию — она написана **в правом нижнем углу панели** (`v0.12.1`). Затем `Ctrl+F5` и перезапуск таверны.
+- **Не видно обновления?** Проверьте версию — она написана **в правом нижнем углу панели** (`v0.13.0`). Затем `Ctrl+F5` и перезапуск таверны.
 - **Ошибка `Need to specify how to reconcile divergent branches` при обновлении.** История git разошлась: удалите расширение и установите заново по URL.
 - **Панель открылась «не той» разметкой.** Жёсткое обновление (`Ctrl+F5`); при повторе — переустановка.
 - **Погода не меняет фон.** Проверьте, что Weather Background включён и в его настройках не стоит «постоянный эффект none».
@@ -198,7 +216,7 @@ SillyTavern/public/scripts/extensions/third-party/scene-panel
 | 📅 | **Календар** | Лічильник дня + назва місяця + кількість днів у місяці (5–60). Клік по дню — перехід. |
 | 📍 | **Місце** | Вільний рядок: «Палац Ночі, покої Ризанду». |
 | 🕐 | **Час доби** | Вільний текст + швидкі чипи: світанок · ранок · день · вечір · захід · ніч. |
-| 🌦 | **Погода** | Вільний текст; за наявності Weather Background вмикає фон сцени. |
+| 🌦 | **Погода** | Вільний текст; за наявності Weather Background або Magic Aura вмикає фон сцени. |
 | 👥 | **Хто поруч** | Список персонажів. Під полем — чипи `＋ Ім'я` з останніх повідомлень. |
 | ⚡ | **Відкриті нитки** | Що висить і чекає розвитку (по одній на рядок). |
 | 🌫 | **Тон сцени** | Емоційна рамка: «крихке перемир'я», «холодна лють». |
@@ -279,6 +297,23 @@ SillyTavern/public/scripts/extensions/third-party/scene-panel
 - враховує налаштування самого Weather Background (вимкнено / мобільний режим);
 - якщо Weather Background не встановлено — панель тихо працює без нього.
 
+### ✨ Інтеграція з Magic Aura
+
+Якщо встановлено [Magic Aura](https://github.com/satsvi97/magic-aura), панель віддає їй сцену повністю — погоду, місце, час доби й тон, — а Aura сама обирає небо, частинки та затемнення:
+
+- `weather` → частинки: гроза, дощ, сніг, град, завірюха, хмарно, ясно;
+- `place` → вигляд: пустеля, ліс, море, місто, храм/кімната, сад, сакура, парк, табір;
+- `timeOfDay` → небо: ніч → зірки, світанок → туман, захід → тепле світло;
+- `mood` → затемнення сцени.
+
+- вмикається галочкою **«✨ фон сцени (Magic Aura)»**;
+- сцена змінюється одразу за подією панелі, без очікування опитування метаданих;
+- під галочкою видно стан: синхронізацію увімкнено, пауза або Aura не встановлена;
+- ручний вибір сцени в Magic Aura (або `/aura`) ставить синхронізацію на паузу — власна картинка завжди головніша; повернути можна галочкою в панелі або «Синхронізація зі Scene Panel» у Aura;
+- будь-яку сцену Aura можна назвати прямо в тезі: `[[scene: аура=сакура]]`, `аура=торт`, `аура=гроза` (id, ім'я або слово); поле спрацьовує в момент появи, а наступна зміна погоди чи місця знову бере гору;
+- нові сцени Aura підхоплюються самі: панель не знає її каталогу, відповідність шукається за словами сцени (`keywords`) — правок у панелі не потрібно;
+- у Magic Aura нічого не пишеться: панель лише віддає стан.
+
 ### 🩺 Діагностика та історія
 
 - Під час кожної зміни сцени зберігається **знімок** (до 20 останніх, у `chat_metadata`).
@@ -308,6 +343,7 @@ SillyTavern/public/scripts/extensions/third-party/scene-panel
 | **🎨 тема панелі** | `авто` (за фоном таверни) / `темна` / `світла`. |
 | **плаваюча панель у чаті** | Компактна картка в куті (її можна тягати мишею). |
 | **🌦 фон погоди (Weather Background)** | Зв'язок із розширенням погоди. |
+| **✨ фон сцени (Magic Aura)** | Зв'язок із Magic Aura: сцена, частинки й колір. |
 
 ### 💾 Де зберігаються дані
 
@@ -322,7 +358,7 @@ SillyTavern/public/scripts/extensions/third-party/scene-panel
 
 ### 🛠 Якщо щось пішло не так
 
-- **Не видно оновлення?** Перевірте версію — вона написана **в правому нижньому куті панелі** (`v0.12.1`). Потім `Ctrl+F5` і перезапуск таверни.
+- **Не видно оновлення?** Перевірте версію — вона написана **в правому нижньому куті панелі** (`v0.13.0`). Потім `Ctrl+F5` і перезапуск таверни.
 - **Помилка `Need to specify how to reconcile divergent branches` під час оновлення.** Історія git розійшлася: видаліть розширення й встановіть заново за URL.
 - **Панель відкрилася «не тією» розміткою.** Жорстке оновлення (`Ctrl+F5`); якщо повторюється — перевстановлення.
 - **Погода не змінює фон.** Перевірте, що Weather Background увімкнено і в його налаштуваннях не стоїть «постійний ефект none».
@@ -369,7 +405,7 @@ Huvudmagin: AI:n kan **själv** uppdatera scenen med en servicetagg i slutet av 
 | 📅 | **Kalender** | Dagsräknare + månadsnamn + antal dagar per månad (5–60). Klicka på en dag för att hoppa. |
 | 📍 | **Plats** | Fri text: "Nattpalatset, Rhysands gemak". |
 | 🕐 | **Tid på dygnet** | Fri text + snabbchips: gryning · morgon · dag · kväll · solnedgång · natt. |
-| 🌦 | **Väder** | Fri text; styr Weather Background-effekten när den är installerad. |
+| 🌦 | **Väder** | Fri text; styr Weather Background- eller Magic Aura-bakgrunden när den är installerad. |
 | 👥 | **Närvarande** | Karaktärslista. Chips `＋ Namn` dyker upp från senaste meddelanden. |
 | ⚡ | **Öppna trådar** | Vad som hänger och väntar (en per rad). |
 | 🌫 | **Scenens ton** | Känslomässig ram: "skör vapenvila", "kall vrede". |
@@ -450,6 +486,23 @@ Om [Weather Background](https://github.com/tankisthuieglot-hue/sillytavern-weath
 - respekterar Weather Backgrounds egna inställningar (avstängt / mobilläge);
 - om Weather Background saknas fungerar panelen tyst utan den.
 
+### ✨ Magic Aura-integration
+
+Om [Magic Aura](https://github.com/satsvi97/magic-aura) är installerad skickar panelen hela scenen till den — väder, plats, tid på dygnet och ton — och Aura väljer himmel, partiklar och mörkläggning själv:
+
+- `weather` → partiklar: åska, regn, snö, hagel, snöstorm, mulet, klart;
+- `place` → utseende: öken, skog, hav, stad, tempel/rum, trädgård, sakura, park, läger;
+- `timeOfDay` → himmel: natt → stjärnor, gryning → dimma, solnedgång → varmt ljus;
+- `mood` → scenens mörkläggning.
+
+- aktiveras med kryssrutan **"✨ scenbakgrund (Magic Aura)"**;
+- scenen byts direkt när panelen ändras, utan att vänta på metadata-polling;
+- under kryssrutan syns status: synk på, pausad eller Aura saknas;
+- ett manuellt scenval i Magic Aura (eller `/aura`) pausar synken — din egen bild vinner alltid; slå på den igen med kryssrutan i panelen eller "Synka med Scene Panel" i Aura;
+- vilken Aura-scen som helst kan namnges direkt i taggen: `[[scene: аура=сакура]]`, `аура=торт`, `аура=гроза` (id, namn eller ord); fältet gäller i samma stund, och nästa ändring av väder eller plats tar över igen;
+- nya Aura-scener plockas upp själva: panelen känner inte dess katalog, matchningen sker på scenens `keywords` — inga ändringar i panelen behövs;
+- ingenting skrivs till Magic Aura: panelen skickar bara sitt tillstånd.
+
 ### 🩺 Diagnostik och historik
 
 - Varje scenändring sparar en **ögonblicksbild** (upp till 20, i `chat_metadata`).
@@ -479,6 +532,7 @@ Knappar **uppdatera** och **rensa**. Statistiken ligger separat från scenen —
 | **🎨 panelens tema** | `auto` (från tavernans bakgrund) / `mörkt` / `ljust`. |
 | **flytande panel i chatten** | Kompakt dragbart kort i hörnet. |
 | **🌦 vederbakgrund** | Koppling till Weather Background. |
+| **✨ scenbakgrund (Magic Aura)** | Koppling till Magic Aura: scen, partiklar och färg. |
 
 ### 💾 Var data lagras
 
@@ -493,7 +547,7 @@ Varje chatt har sin egen scen, historik och statistik.
 
 ### 🛠 Felsökning
 
-- **Ingen uppdatering syns?** Kontrollera versionen **i panelens nedre högra hörn** (`v0.12.1`), kör sedan `Ctrl+F5` och starta om tavernan.
+- **Ingen uppdatering syns?** Kontrollera versionen **i panelens nedre högra hörn** (`v0.13.0`), kör sedan `Ctrl+F5` och starta om tavernan.
 - **`Need to specify how to reconcile divergent branches` vid uppdatering.** Git-historiken har divergerat: ta bort tillägget och installera om via URL.
 - **Panelen öppnades med fel layout.** Hård uppdatering (`Ctrl+F5`); upprepas det — installera om.
 - **Vädret ändrar inte bakgrunden.** Kontrollera att Weather Background är aktiverat och att dess "permanent effekt" inte är satt till none.
@@ -540,7 +594,7 @@ The main magic: the AI can **update the scene itself** with a service tag at the
 | 📅 | **Calendar** | Day counter + month name + days per month (5–60). Click a day to jump. |
 | 📍 | **Place** | Free text: "Night Palace, Rhysand's chambers". |
 | 🕐 | **Time of day** | Free text + quick chips: dawn · morning · day · evening · sunset · night. |
-| 🌦 | **Weather** | Free text; drives the Weather Background effect when installed. |
+| 🌦 | **Weather** | Free text; drives the Weather Background or Magic Aura background when installed. |
 | 👥 | **Present** | Character list. Chips `＋ Name` appear from recent messages. |
 | ⚡ | **Open threads** | What is hanging and waiting (one per line). |
 | 🌫 | **Scene mood** | Emotional frame: "fragile truce", "cold fury". |
@@ -621,6 +675,23 @@ If [Weather Background](https://github.com/tankisthuieglot-hue/sillytavern-weath
 - respects Weather Background's own settings (disabled / mobile mode);
 - if Weather Background is missing, the panel silently works without it.
 
+### ✨ Magic Aura integration
+
+If [Magic Aura](https://github.com/satsvi97/magic-aura) is installed, the panel hands it the whole scene — weather, place, time of day and mood — and Aura picks the sky, particles and shade itself:
+
+- `weather` → particles: thunderstorm, rain, snow, hail, blizzard, overcast, clear;
+- `place` → look: desert, forest, sea, city, temple/room, garden, sakura, park, camp;
+- `timeOfDay` → sky: night → stars, dawn → fog, sunset → warm light;
+- `mood` → scene shade.
+
+- enabled by the **"✨ scene background (Magic Aura)"** checkbox;
+- the scene changes right on the panel event, without waiting for metadata polling;
+- the status line under the checkbox shows: sync on, paused, or Aura not installed;
+- picking a scene manually in Magic Aura (or with `/aura`) pauses the sync — your own picture always wins; turn it back on with the panel checkbox or "Sync with Scene Panel" in Aura;
+- any Aura scene can be named right in the tag: `[[scene: аура=сакура]]`, `аура=торт`, `аура=гроза` (id, name or word); the field applies the moment it appears, and the next weather or place change takes over again;
+- new Aura scenes are picked up on their own: the panel does not know its catalogue, matching goes by each scene's `keywords` — no panel changes needed;
+- nothing is written into Magic Aura: the panel only sends its state.
+
 ### 🩺 Diagnostics & history
 
 - Every scene change stores a **snapshot** (up to 20, in `chat_metadata`).
@@ -650,6 +721,7 @@ Buttons **refresh** and **clear**. Statistics live separately from the scene —
 | **🎨 panel theme** | `auto` (from tavern background) / `dark` / `light`. |
 | **floating panel in chat** | Compact draggable card in the corner. |
 | **🌦 weather background** | Hook into Weather Background. |
+| **✨ scene background (Magic Aura)** | Hook into Magic Aura: scene, particles and colour. |
 
 ### 💾 Where data lives
 
@@ -664,7 +736,7 @@ Each chat has its own scene, history and statistics.
 
 ### 🛠 Troubleshooting
 
-- **No update visible?** Check the version shown **in the bottom-right corner of the panel** (`v0.12.1`), then `Ctrl+F5` and restart the tavern.
+- **No update visible?** Check the version shown **in the bottom-right corner of the panel** (`v0.13.0`), then `Ctrl+F5` and restart the tavern.
 - **`Need to specify how to reconcile divergent branches` on update.** The git history diverged: delete the extension and reinstall it via URL.
 - **Panel opened with the wrong layout.** Hard refresh (`Ctrl+F5`); if it repeats — reinstall.
 - **Weather doesn't change the background.** Make sure Weather Background is enabled and its "permanent effect" is not set to none.

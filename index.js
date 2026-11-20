@@ -91,7 +91,7 @@ const WEATHER_STATES = {
 let weatherRendererPromise = null;
 
 // Версия расширения (дублирует manifest.json для отображения в UI)
-const PANEL_VERSION = '0.12.1';
+const PANEL_VERSION = '0.13.0';
 
 // Встроенная разметка панели. Не зависит от внешнего panel.html и его кэша.
 const PANEL_HTML = `<div class="scene-panel-slider" id="scene_panel_slider">
@@ -214,6 +214,11 @@ const PANEL_HTML = `<div class="scene-panel-slider" id="scene_panel_slider">
         <span data-sp-i18n="wb">🌦 фон погоды (Weather Background)</span>
     </label>
     <label class="checkbox_label scene-panel-check">
+        <input type="checkbox" id="scene_panel_aura_integration">
+        <span data-sp-i18n="aura">✨ фон сцены (Magic Aura)</span>
+    </label>
+    <div class="scene-panel-hint scene-panel-aura-state" id="scene_panel_aura_state"></div>
+    <label class="checkbox_label scene-panel-check">
         <input type="checkbox" id="scene_panel_debug">
         <span data-sp-i18n="debug">🐞 отладка в консоль</span>
     </label>
@@ -275,6 +280,11 @@ const I18N = {
         inject: 'вставлять сцену в промпт', role: 'роль инжекта',
         theme: '🎨 тема панели', themeAuto: 'авто', themeDark: 'тёмная', themeLight: 'светлая',
         floating: 'плавающая панель в чате', wb: '🌦 фон погоды (Weather Background)',
+        aura: '✨ фон сцены (Magic Aura)',
+        auraOn: 'Magic Aura: синхронизация включена',
+        auraOff: 'Magic Aura подключена, но синхронизация из панели выключена',
+        auraManual: 'Magic Aura: выбрана своя сцена — синхронизация на паузе',
+        auraMissing: 'Magic Aura не установлена — фон сцены недоступен',
         statsHint: '📊 Статистика этого чата. Свайп вправо или кнопка «✕» — вернуться к сцене.',
         statsRefresh: 'обновить', statsClear: 'очистить',
         day: 'день', noThreads: 'нет открытых нитей', addToPresent: 'добавить в «рядом»',
@@ -319,6 +329,11 @@ const I18N = {
         inject: 'inject scene into prompt', role: 'injection role',
         theme: '🎨 panel theme', themeAuto: 'auto', themeDark: 'dark', themeLight: 'light',
         floating: 'floating panel in chat', wb: '🌦 weather background (Weather Background)',
+        aura: '✨ scene background (Magic Aura)',
+        auraOn: 'Magic Aura: sync is on',
+        auraOff: 'Magic Aura is installed, but panel sync is off',
+        auraManual: 'Magic Aura: custom scene chosen — sync is paused',
+        auraMissing: 'Magic Aura is not installed — scene background unavailable',
         statsHint: '📊 Statistics for this chat. Swipe right or press «✕» to return to the scene.',
         statsRefresh: 'refresh', statsClear: 'clear',
         day: 'day', noThreads: 'no open threads', addToPresent: 'add to present',
@@ -363,6 +378,11 @@ const I18N = {
         inject: 'вставляти сцену в промпт', role: 'роль інжекту',
         theme: '🎨 тема панелі', themeAuto: 'авто', themeDark: 'темна', themeLight: 'світла',
         floating: 'плаваюча панель у чаті', wb: '🌦 фон погоди (Weather Background)',
+        aura: '✨ фон сцени (Magic Aura)',
+        auraOn: 'Magic Aura: синхронізацію увімкнено',
+        auraOff: 'Magic Aura встановлена, але синхронізацію з панелі вимкнено',
+        auraManual: 'Magic Aura: обрано власну сцену — синхронізація на паузі',
+        auraMissing: 'Magic Aura не встановлена — фон сцени недоступний',
         statsHint: '📊 Статистика цього чату. Свайп вправо або кнопка «✕» — повернутися до сцени.',
         statsRefresh: 'оновити', statsClear: 'очистити',
         day: 'день', noThreads: 'немає відкритих ниток', addToPresent: 'додати до «поруч»',
@@ -407,6 +427,11 @@ const I18N = {
         inject: 'injicera scenen i prompten', role: 'injektionsroll',
         theme: '🎨 panelens tema', themeAuto: 'auto', themeDark: 'mörkt', themeLight: 'ljust',
         floating: 'flytande panel i chatten', wb: '🌦 vederbakgrund (Weather Background)',
+        aura: '✨ scenbakgrund (Magic Aura)',
+        auraOn: 'Magic Aura: synken är på',
+        auraOff: 'Magic Aura är installerad, men panelsynken är av',
+        auraManual: 'Magic Aura: egen scen vald — synken är pausad',
+        auraMissing: 'Magic Aura är inte installerad — scenbakgrunden är otillgänglig',
         statsHint: '📊 Statistik för denna chatt. Svep åt höger eller tryck «✕» för att gå tillbaka.',
         statsRefresh: 'uppdatera', statsClear: 'rensa',
         day: 'dag', noThreads: 'inga öppna trådar', addToPresent: 'lägg till i närvarande',
@@ -523,7 +548,7 @@ function emptyState() {
 
 function getSettings() {
     if (!extension_settings[MODULE] || typeof extension_settings[MODULE] !== 'object') {
-        extension_settings[MODULE] = { enabled: true, inject: true, role: 'system', floating: true, floatPos: null, weatherIntegration: true, theme: 'auto', lang: 'ru', debug: false, allowDayRollback: false, mobile: true, floatPeek: true, fabPos: null };
+        extension_settings[MODULE] = { enabled: true, inject: true, role: 'system', floating: true, floatPos: null, weatherIntegration: true, auraIntegration: true, theme: 'auto', lang: 'ru', debug: false, allowDayRollback: false, mobile: true, floatPeek: true, fabPos: null };
     }
     const s = extension_settings[MODULE];
     if (typeof s.enabled !== 'boolean') s.enabled = true;
@@ -531,6 +556,7 @@ function getSettings() {
     if (typeof s.floating !== 'boolean') s.floating = true;
     if (typeof s.role !== 'string') s.role = 'system';
     if (typeof s.weatherIntegration !== 'boolean') s.weatherIntegration = true;
+    if (typeof s.auraIntegration !== 'boolean') s.auraIntegration = true;
     if (typeof s.theme !== 'string') s.theme = 'auto';
     if (!LANGS.includes(s.lang)) s.lang = 'ru';
     if (typeof s.debug !== 'boolean') s.debug = false;
@@ -656,10 +682,16 @@ function sceneText(state) {
 
 // Только требование к формату — без состояния сцены (для Author's Note)
 function sceneInstructionText() {
+    /* Если Magic Aura на месте, разрешаем модели назвать конкретный фон.
+       Без неё поле было бы мусором в промпте, поэтому подсказка условная. */
+    const auraHint = auraApi() && getSettings().auraIntegration
+        ? ' При желании добавь необязательное поле аура=… — слово сцены Magic Aura (сакура, магия, гроза, пустыня, торт).'
+        : '';
     return 'ОБЯЗАТЕЛЬНО: в самом конце КАЖДОГО ответа добавляй ровно одну служебную строку формата ' +
         '[[scene: место=…; время=…; рядом=…; висит=…; тон=…; погода=…]], подставив актуальные значения. ' +
-        'Если ничего не изменилось — просто повтори текущие значения. ' +
-        'Не упоминай эту строку в тексте ответа и не оборачивай её в блок кода.';
+        'Если ничего не изменилось — просто повтори текущие значения.' +
+        auraHint +
+        ' Не упоминай эту строку в тексте ответа и не оборачивай её в блок кода.';
 }
 
 function injectionRole() {
@@ -744,6 +776,8 @@ function refresh() {
         $panel.find('#scene_panel_floating').prop('checked', getSettings().floating);
         $panel.find('#scene_panel_role').val(getSettings().role);
         $panel.find('#scene_panel_weather_integration').prop('checked', getSettings().weatherIntegration);
+        $panel.find('#scene_panel_aura_integration').prop('checked', getSettings().auraIntegration);
+        $('#scene_panel_aura_state').text(auraStatusText());
         $panel.find('#scene_panel_debug').prop('checked', !!getSettings().debug);
         $panel.find('#scene_panel_day_rollback').prop('checked', !!getSettings().allowDayRollback);
         $panel.find('#scene_panel_mobile').prop('checked', !!getSettings().mobile);
@@ -766,6 +800,7 @@ function refresh() {
 
 function readForm() {
     const state = getState();
+    const customBefore = JSON.stringify(state.custom || {});
     const read = (field) => {
         const $el = $('#scene_panel_settings [data-scene-field="' + field + '"]');
         return $el.length > 0 ? String($el.val() ?? '') : '';
@@ -791,12 +826,14 @@ function readForm() {
         });
         state.custom = custom;
     }
+    const customChanged = customBefore !== JSON.stringify(state.custom || {});
     commit();
     recordSnapshot();
     scheduleStats();
     syncPrompt();
     refresh();
     applyWeatherEffect();
+    applyAuraEffect(false, customChanged && hasAuraField(state.custom));
 }
 
 function shiftDay(delta) {
@@ -913,6 +950,7 @@ function handleMessage(messageId) {
         lastTagPattern = tag.index;
 
         const patch = parseTag(tag.body);
+        const auraFresh = Boolean(patch && patch.custom && hasAuraField(patch.custom));
         if (patch && patch.custom) {
             Object.assign(getState().custom, patch.custom);
             delete patch.custom;
@@ -933,6 +971,7 @@ function handleMessage(messageId) {
         syncPrompt();
         refresh();
         applyWeatherEffect();
+        applyAuraEffect(false, auraFresh);
     } catch (e) {
         console.error('[scene-panel] tag handling failed', e);
     }
@@ -1493,6 +1532,7 @@ function restoreStateFrom(obj) {
     syncPrompt();
     refresh();
     applyWeatherEffect();
+    applyAuraEffect(true);
 }
 
 // Диагностика: ищет последний тег в истории, иначе — последний снимок
@@ -1516,6 +1556,7 @@ function runDiagnostics() {
         syncPrompt();
         refresh();
         applyWeatherEffect();
+        applyAuraEffect(true);
         lines.push(tf('diagFromTag', { n: latest.index + 1 }));
     } else if (hist.length > 0) {
         const snap = hist[hist.length - 1];
@@ -1566,6 +1607,82 @@ async function applyWeatherEffect(force = false) {
         weatherRendererPromise = null;
         console.warn('[scene-panel] Weather Background недоступен, эффект пропущен', e);
     }
+}
+
+// ---- Magic Aura ----
+// Панель остаётся источником состояния, а облик рисует Magic Aura.
+// Связь мягкая: CustomEvent на window, чтобы не импортировать чужой модуль
+// (иначе его код инициализировался бы дважды). Если у Magic Aura есть публичное
+// API (window.MagicAura), зовём его напрямую — так сцена меняется мгновенно,
+// не дожидаясь её собственного опроса метаданных.
+const AURA_EVENT = 'scene-panel:update';
+const AURA_FIELD_RE = /^(аура|aura|аура сцены|aura scene|сцена ауры)$/i;
+
+function auraApi() {
+    const aura = window.MagicAura;
+    return aura && typeof aura === 'object' ? aura : null;
+}
+
+// Есть ли в доп. полях указание конкретной сцены Magic Aura (аура=…)
+function hasAuraField(obj) {
+    return Object.keys(obj || {}).some((key) => AURA_FIELD_RE.test(String(key).trim()));
+}
+
+// Передаёт сцену в Magic Aura.
+// force=true — перечитать без ожидания изменений (сброс сцены, смена чата);
+// fresh=true — сцену назвали только что (тег аура=… или правка поля), и её
+// нужно применить даже если значение не изменилось.
+function applyAuraEffect(force = false, fresh = false) {
+    if (!isEnabled() || !getSettings().auraIntegration) return;
+    const state = getState();
+
+    try {
+        window.dispatchEvent(
+            new CustomEvent(AURA_EVENT, {
+                detail: { state, force, fresh, source: 'scene-panel', version: PANEL_VERSION },
+            }),
+        );
+    } catch (e) {
+        console.warn('[scene-panel] Magic Aura event failed', e);
+    }
+
+    const aura = auraApi();
+    if (aura && typeof aura.sync === 'function') {
+        try {
+            aura.sync(force, fresh);
+        } catch (e) {
+            console.warn('[scene-panel] Magic Aura sync failed', e);
+        }
+    }
+}
+
+// Строка состояния под галочкой: установлена ли Magic Aura и слушает ли она панель.
+function auraStatusText() {
+    const aura = auraApi();
+    if (!aura) return t('auraMissing');
+    if (!getSettings().auraIntegration) return t('auraOff');
+    let syncPanel = true;
+    try {
+        const s = typeof aura.getState === 'function' ? aura.getState() : null;
+        if (s && s.syncPanel === false) syncPanel = false;
+    } catch (e) {
+        /* чужое API не должно ломать панель */
+    }
+    return syncPanel ? t('auraOn') : t('auraManual');
+}
+
+// Magic Aura может загрузиться позже панели: по её событиям обновляем строку
+// состояния и отдаём сцену, когда она готова.
+function bindAuraBridge() {
+    window.addEventListener('magic-aura:ready', () => {
+        refresh();
+        syncPrompt();
+        applyAuraEffect(true);
+    });
+    window.addEventListener('magic-aura:state', () => {
+        const el = document.getElementById('scene_panel_aura_state');
+        if (el) el.textContent = auraStatusText();
+    });
 }
 
 function applyFloatPos() {
@@ -1779,6 +1896,7 @@ function bindEvents() {
         syncPrompt();
         refresh();
         applyWeatherEffect(true);
+        applyAuraEffect(true);
     });
     $panel.on('click', '#scene_panel_diag', () => runDiagnostics());
     $panel.on('change', '#scene_panel_inject', (e) => {
@@ -1816,6 +1934,27 @@ function bindEvents() {
             /* ignore */
         }
         applyWeatherEffect();
+        refresh();
+    });
+
+    $panel.on('change', '#scene_panel_aura_integration', (e) => {
+        getSettings().auraIntegration = !!e.target.checked;
+        try {
+            saveSettings();
+        } catch (err) {
+            /* ignore */
+        }
+        // Галочка — это и есть переключатель синхронизации на стороне Magic Aura.
+        const aura = auraApi();
+        if (aura && typeof aura.setSyncPanel === 'function') {
+            try {
+                aura.setSyncPanel(getSettings().auraIntegration);
+            } catch (err) {
+                console.warn('[scene-panel] Magic Aura setSyncPanel failed', err);
+            }
+        }
+        if (getSettings().auraIntegration) applyAuraEffect(true);
+        syncPrompt();
         refresh();
     });
 
@@ -1872,6 +2011,7 @@ function bindEvents() {
         syncPrompt();
         refresh();
         applyWeatherEffect();
+        applyAuraEffect();
         $('#scene_panel_diag_result').text(t('testApplied'));
     });
 
@@ -1998,13 +2138,18 @@ jQuery(async () => {
         refresh();
         syncPrompt();
         applyWeatherEffect();
+        bindAuraBridge();
+        applyAuraEffect(true);
 
         eventSource.on(event_types.MESSAGE_RECEIVED, handleMessage);
         eventSource.on(event_types.CHAT_CHANGED, () => {
             getState();
             refresh();
             syncPrompt();
-            setTimeout(() => applyWeatherEffect(), 250);
+            setTimeout(() => {
+                applyWeatherEffect();
+                applyAuraEffect(true);
+            }, 250);
         });
         eventSource.on(event_types.GENERATION_STARTED, () => syncPrompt());
         eventSource.on(event_types.MESSAGE_SENT, () => refresh());

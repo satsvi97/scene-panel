@@ -40,6 +40,11 @@
     opacity: 0.9;
 }
 
+/* строка состояния Magic Aura под галочкой интеграции */
+.scene-panel-aura-state {
+    margin: -2px 0 4px;
+}
+
 .scene-panel-field {
     display: flex;
     flex-direction: column;

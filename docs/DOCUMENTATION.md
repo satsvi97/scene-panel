@@ -1,6 +1,6 @@
 ﻿# ✦ SCENE PANEL ✦ — Полная документация
 
-**Версия:** 0.12.1 · **Платформа:** SillyTavern (third-party extension) · **Лицензия:** MIT © 2026 Selena's Tavern (satsvi97)
+**Версия:** 0.13.0 · **Платформа:** SillyTavern (third-party extension) · **Лицензия:** MIT © 2026 Selena's Tavern (satsvi97)
 
 > Документ описывает внутреннее устройство расширения, модель данных, форматы, интеграции и ограничения.
 > Пользовательская инструкция — в [README](../README.md). План тестирования — в [TESTPLAN](TESTPLAN.md).
@@ -140,6 +140,7 @@ import { extension_settings, renderExtensionTemplateAsync, saveMetadataDebounced
 | `floating` | boolean | `true` | Плавающая карточка. |
 | `floatPos` | `{x,y}` \| null | `null` | Позиция карточки в px. |
 | `weatherIntegration` | boolean | `true` | Управление Weather Background. |
+| `auraIntegration` | boolean | `true` | Управление Magic Aura: панель отдаёт ей сцену. |
 | `theme` | string | `'auto'` | `auto` / `dark` / `light`. |
 | `lang` | string | `'ru'` | `ru` / `en` / `uk` / `sv`. |
 | `debug` | boolean | `false` | Логировать в консоль: пойманные сообщения, найденные теги, применение языка. |
@@ -337,6 +338,54 @@ import { extension_settings, renderExtensionTemplateAsync, saveMetadataDebounced
 | град / hail | `hail` |
 | ясно / clear | `clear` |
 | нет / none | `none` |
+
+### 7.1 Интеграция с Magic Aura (0.13.0+)
+
+[Magic Aura](https://github.com/satsvi97/magic-aura) — соседнее расширение: оно рисует атмосферу сцены
+(небо, частицы, затемнение). Панель остаётся источником состояния и ничего не рисует сама.
+
+- галочка `auraIntegration` (по умолчанию включена) — панель отдаёт сцену;
+- связь мягкая, без импорта чужого модуля (иначе его код инициализировался бы дважды):
+  `window.dispatchEvent(new CustomEvent('scene-panel:update', { detail: { state, force, fresh, source, version } }))`;
+- если у Magic Aura есть публичное API `window.MagicAura`, вызывается `MagicAura.sync(force, fresh)` — сцена
+  применяется мгновенно, не дожидаясь её собственного опроса `chat_metadata.scene_panel` (раз в 2 с);
+- `detail.fresh = true` — сцену назвали только что (тег `аура=…` или правка доп. поля), и её нужно применить
+  даже без изменения состояния;
+- включение/выключение галочки вызывает `MagicAura.setSyncPanel(bool)`: при выключении Aura перестаёт
+  слушать панель и держит свою сцену;
+- Magic Aura может загрузиться позже панели: панель слушает `magic-aura:ready` (обновить статус и отдать
+  сцену) и `magic-aura:state` (обновить строку состояния);
+- статус под галочкой: `auraMissing` / `auraOn` / `auraOff` / `auraManual` (в Aura выбрана своя сцена —
+  синхронизация на паузе);
+- `applyAuraEffect(force)` вызывается там же, где `applyWeatherEffect`: `readForm`, `handleMessage`,
+  сброс, диагностика, тестовый тег, старт, смена чата (`force=true`);
+- панель ничего не пишет в настройки Magic Aura, кроме явного `setSyncPanel` по действию пользователя.
+
+Как Magic Aura выбирает сцену (порядок старшинства):
+
+| шаг | что смотрит | пример |
+|---|---|---|
+| 1 | доп. поле `аура=…` — только в момент появления (`fresh`) или при `force` | `[[scene: аура=сакура]]` → `sakura` |
+| 2 | `weather` по карте погоды | `погода=гроза` → `storm` |
+| 3 | `place` по карте мест (+ `пустыня` + ночь → `desert_night`) | `место=лес` → `forest` |
+| 4 | `keywords` всех сцен по тексту `place + timeOfDay + mood + weather + доп. поля` | `туман` → `fog`, `звёздопад` → `starfall` |
+| 5 | время суток | ночь → `night`, рассвет → `fog`, закат → `sunny` |
+
+Шаг 4 — причина, по которой новые сцены Magic Aura работают без правок панели: всё, что не попало в карты,
+ищется по словам самой сцены.
+
+Контракт со стороны Magic Aura:
+
+| член | назначение |
+|---|---|
+| `window.MagicAura.version` | строка версии |
+| `MagicAura.getState()` | `{ version, ready, enabled, scene, sceneName, layer, syncPanel, panel }` |
+| `MagicAura.sync(force?, fresh?)` | перечитать `chat_metadata.scene_panel` сейчас |
+| `MagicAura.setSyncPanel(on)` | включить/выключить чтение панели |
+| `MagicAura.setScene(id)` | ручной выбор сцены (выключает синхронизацию) |
+| `MagicAura.open()` | открыть быстрый выбор сцены |
+| событие `magic-aura:ready` | API готово |
+| событие `magic-aura:state` | изменилось состояние (сцена, синхронизация, вкл/выкл) |
 
 ---
 
